@@ -156,13 +156,13 @@ class EventPredictBrain(object):
             self.t += 1
             return
 
-        if self.input_concat_timesteps > 1:
-            state_seq = self.input_history.get_state_sequence(delay_long=self.input_concat_timesteps - 1, delay_short=0)
-            print(state_seq.shape, self.input_state_dim, self.input_concat_timesteps, input_state.shape)  # (1, 512) 512 1 (512,)
-
-            # input_state = np.sum(state_seq, axis=0)
-            # input_state[input_state > 1] = 1
-            # nnz_input = np.nonzero(input_state)[0]
+        # if self.input_concat_timesteps > 1:
+        #     state_seq = self.input_history.get_state_sequence(delay_long=self.input_concat_timesteps - 1, delay_short=0)
+        #     print(state_seq.shape, self.input_state_dim, self.input_concat_timesteps, input_state.shape)  # (1, 512) 512 1 (512,)
+        #
+        #     input_state = np.sum(state_seq, axis=0)
+        #     input_state[input_state > 1] = 1
+        #     nnz_input = np.nonzero(input_state)[0]
 
         # *************** learning ***************
 
