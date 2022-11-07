@@ -1,0 +1,6 @@
+numpy
+scipy
+ib_insync
+scikit-learn
+opencv-python
+matplotlib
