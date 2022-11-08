@@ -1,5 +1,6 @@
 import time
 import cv2
+from sklearn.neural_network import MLPRegressor
 
 import numpy as np
 np.set_printoptions(suppress=True, precision=2)
@@ -43,13 +44,32 @@ class EventPredictBrain(object):
 
         self.plots_folder = "."
         self.input_concat_timesteps = 1
-        self.input_history = StatesLimitedHistory(params={'max_delay': self.input_concat_timesteps,
-                                                          'states_dim_list': [self.input_state_dim],
-                                                          'store_extra_data': False})
+        # we use input_history also for network, so init below instead with longer history
+        # self.input_history = StatesLimitedHistory(params={'max_delay': self.input_concat_timesteps,
+        #                                                   'states_dim_list': [self.input_state_dim],
+        #                                                   'store_extra_data': False})
 
         # **************** network ****************
 
-        self.rf_weights = np.random.random((self.num_rfs, self.input_state_dim)) * 1e-2  # 1e-12
+        # old networks had this. need intermediate weights in this way later to visualize:
+        # self.rf_weights = np.random.random((self.num_rfs, self.input_state_dim)) * 1e-2  # 1e-12
+
+        self.max_predict_time = 100  # assume next event time > max_predict_time == infinite
+        self.exp_decay = 0.06  # 0.06: roughly matches 100 max predict time (use temp.py to plot and set)
+        self.num_training_points_per_batch = 10000  # how many points for training one batch?
+        self.retrain_every_k_steps = 5000  # how often to retrain network i.e. to train based on a new batch. half of num training points: half overlap to last batch
+
+        # why 2 * max_predict_time? this is the length of data you need for one training point: need max_predict_time behind, and max_predict_time_ahead
+        #   why + num_training_points? this is how many training points you will actually have
+        self.input_history = StatesLimitedHistory(params={'max_delay': 2 * self.max_predict_time + self.num_training_points_per_batch,
+                                                          'states_dim_list': [self.input_state_dim],
+                                                          'store_extra_data': False})
+
+        self.context_history   # for storing self output as context
+
+        # input size to net: input_state_dim + context_state_dim
+        self.net = MLPRegressor(hidden_layer_sizes=self.input_state_dim * 10, random_state=1, max_iter=500)
+
 
         # **************** plots ****************
 
