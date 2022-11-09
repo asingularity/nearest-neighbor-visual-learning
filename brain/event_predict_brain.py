@@ -58,6 +58,7 @@ class EventPredictBrain(object):
         self.exp_decay = 0.06  # 0.06: roughly matches 100 max predict time (use temp.py to plot and set)
         self.num_training_points_per_batch = 10000  # how many points for training one batch?
         self.retrain_every_k_steps = 5000  # how often to retrain network i.e. to train based on a new batch. half of num training points: half overlap to last batch
+        self.hidden_state_dim = self.input_state_dim * 10  # size of MLP hidden layer
 
         # why 2 * max_predict_time? this is the length of data you need for one training point: need max_predict_time behind, and max_predict_time_ahead
         #   why + num_training_points? this is how many training points you will actually have
@@ -65,11 +66,15 @@ class EventPredictBrain(object):
                                                           'states_dim_list': [self.input_state_dim],
                                                           'store_extra_data': False})
 
-        self.context_history   # for storing self output as context
+        self.context_history = StatesLimitedHistory(params={'max_delay': 2 * self.max_predict_time + self.num_training_points_per_batch,
+                                                            'states_dim_list': [self.hidden_state_dim],
+                                                            'store_extra_data': False})
+        # for storing self output as context
 
         # input size to net: input_state_dim + context_state_dim
-        self.net = MLPRegressor(hidden_layer_sizes=self.input_state_dim * 10, random_state=1, max_iter=500)
+        self.net = MLPRegressor(hidden_layer_sizes=(self.hidden_state_dim,), random_state=1, max_iter=500)
 
+        self.last_train_t = -np.inf
 
         # **************** plots ****************
 
@@ -104,15 +109,17 @@ class EventPredictBrain(object):
         ims_list = []
         ims_names_list = []
 
-        rfs_im, rf_ims_dict = make_im(self.rf_weights,
-                                      num_bins_per_pixel=1,
-                                      input_im_dim=self.input_im_dim,
-                                      im_final_dim=int(int(sqrt(self.num_rfs)) * 100),  # /800 for two-im per rf display
-                                      mod_for_disp=int(sqrt(self.num_rfs)),
-                                      normalize_weights=True)
+        # TODO has to be based on intermediate layer weights instead of self.rf_weights
 
-        ims_list.append(rfs_im)
-        ims_names_list.append('prob_weights')
+        # rfs_im, rf_ims_dict = make_im(self.rf_weights,
+        #                               num_bins_per_pixel=1,
+        #                               input_im_dim=self.input_im_dim,
+        #                               im_final_dim=int(int(sqrt(self.num_rfs)) * 100),  # /800 for two-im per rf display
+        #                               mod_for_disp=int(sqrt(self.num_rfs)),
+        #                               normalize_weights=True)
+        #
+        # ims_list.append(rfs_im)
+        # ims_names_list.append('prob_weights')
 
         return ims_list, ims_names_list
 
@@ -184,7 +191,33 @@ class EventPredictBrain(object):
         #     input_state[input_state > 1] = 1
         #     nnz_input = np.nonzero(input_state)[0]
 
-        # *************** learning ***************
+        # *************** step network ***************
+
+        # (1) use most recent history to get all last input times
+
+        # (2) transform times to values
+
+        # (3) step MLP (if trained already)
+
+        # (4) update context states history (from step, or zero values otherwise)
+
+        self.context_history.process_new_states(newest_states_list=[context_state])
+
+        # *************** train network ***************
+
+        if self.t > self.last_train_t + self.retrain_every_k_steps:
+
+            # (1) get forward input history for batch
+            #   this is the least recent from self.input_history
+
+            # (2) get context input history for batch
+
+            # (3) get output history for batch
+            #   this is the most recent from self.input_history
+
+            # (4) do training for batch
+
+            self.last_train_t = self.t
 
         # *************** plots ***************
 

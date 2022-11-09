@@ -7,6 +7,12 @@ copy vision stuff, just what is needed, from NL repo
 
 for IB:
 https://github.com/erdewit/ib_insync
+IB stuff
+https://github.com/erdewit/ib_insync
+https://nbviewer.org/github/erdewit/ib_insync/blob/master/notebooks/tick_data.ipynb
+https://ib-insync.readthedocs.io/api.html
+https://ib-insync.readthedocs.io/recipes.html
+
 
 for MLP use:
 https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html
