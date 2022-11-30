@@ -56,6 +56,20 @@ https://github.com/rapidsai/cuml
 
 
 
+
+        if self.t < self.input_concat_timesteps:
+            self.t += 1
+            return
+
+        # if self.input_concat_timesteps > 1:
+        #     state_seq = self.input_history.get_state_sequence(delay_long=self.input_concat_timesteps - 1, delay_short=0)
+        #     print(state_seq.shape, self.input_state_dim, self.input_concat_timesteps, input_state.shape)  # (1, 512) 512 1 (512,)
+        #
+        #     input_state = np.sum(state_seq, axis=0)
+        #     input_state[input_state > 1] = 1
+        #     nnz_input = np.nonzero(input_state)[0]
+
+
 '''
 
 
@@ -99,15 +113,25 @@ def main():
     #x = np.linspace(start=0.0, stop=1.0, num=200, endpoint=True)
     #y = np.power(x, 100)
 
-    x = np.arange(0, 100)
+    x_label = np.arange(0, 101)
+    x = x_label.astype(np.float)
+    #x[100] = np.inf
     y = np.exp(-x*0.06)
 
+    y_reverted = -np.log(y)/0.06
+
     ax_bar.cla()
-    ax_bar.plot(x, y, color='k', marker='.')
+    ax_bar.plot(x_label, y, color='k', marker='.')
     plt.show()
+
+    # this doesn't plot for some reason but it is the right inverse
+    # ax_bar.cla()
+    # ax_bar.plot(x_label, y_reverted, color='g', marker='.')
+    # plt.show()
+
     #while True:
     #    pass
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
 if __name__ == '__main__':
     main()

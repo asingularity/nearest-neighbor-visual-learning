@@ -134,6 +134,15 @@ class StatesLimitedHistory(object):
         else:
             return None
 
+    def get_state_array_history(self, delay_long, delay_short, state_index=0, oldest_first=True):
+
+        assert oldest_first is True
+
+        history_array = self.state_arrays_list[state_index].copy()
+
+        # need to roll history array by self.t_mod
+        # instead, make a spikes states history class
+
     def get_newest_states_list(self):
         if self.active:
             newest_states_list = []
@@ -144,6 +153,11 @@ class StatesLimitedHistory(object):
             return newest_states_list
         else:
             return None
+
+
+class BinaryEventsHistory(object):
+    def __init__(self, params):
+        pass
 
 
 
