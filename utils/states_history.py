@@ -181,10 +181,13 @@ class ProximalEventsHistory(object):
         # self.right_proximal = np.roll(self.right_proximal, 1, axis=1)
         # self.left_proximal = np.roll(self.left_proximal, 1, axis=1)
 
-    def get_proximal_events_mats(self):
+    def get_right_left_from_middle(self):
+        mid_index = int((self.max_delay - 1) / 2)
 
-        return self.right_proximal, self.left_proximal
+        prox_right_arr = self.right_proximal[:, mid_index]
+        prox_left_arr = self.left_proximal[:, mid_index]
 
+        return prox_right_arr, prox_left_arr
 
 
 

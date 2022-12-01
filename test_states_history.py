@@ -50,13 +50,15 @@ if __name__ == '__main__':
             print()
 
     if speed_test:
-        max_delay = 2 * 100  # 2 * max_predict_time
-        states_dim = 2 * 16 * 16 * 10  # hidden_state_dim -> input_state_dim * 10 -> 2 * input_im_dim * input_im_dim * 10
+        max_delay = 2 * 100 + 1  # 2 * max_predict_time
+        states_dim = 2 * 16 * 16  # * 10  # hidden_state_dim -> input_state_dim * 10 -> 2 * input_im_dim * input_im_dim * 10
 
         fps = FPSCounter()
+        print()
+        print('Init ProximalEventsHistory with max_delay:', max_delay, ', states_dim:', states_dim)
 
         tmp = ProximalEventsHistory(params={'max_delay': max_delay,
-                                          'states_dim': states_dim})
+                                            'states_dim': states_dim})
 
         for step in range(10000):
 

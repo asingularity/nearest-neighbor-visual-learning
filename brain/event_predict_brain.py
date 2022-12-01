@@ -7,7 +7,7 @@ np.set_printoptions(suppress=True, precision=2)
 import random
 import pickle
 from math import sqrt
-from utils.states_history import BinaryEventsHistory
+from utils.states_history import ProximalEventsHistory, StatesLimitedHistory
 from utils.rf_im_maker import make_im
 
 
@@ -63,11 +63,24 @@ class EventPredictBrain(object):
 
         # why 2 * max_predict_time? this is the length of data you need for one training point: need max_predict_time behind, and max_predict_time_ahead
         #   why + num_training_points? this is how many training points you will actually have
-        self.input_history = BinaryEventsHistory(params={'max_delay': 2 * self.max_predict_time + self.num_training_points_per_batch,
-                                                         'states_dim': self.input_state_dim})
 
-        self.context_history = BinaryEventsHistory(params={'max_delay': 2 * self.max_predict_time + self.num_training_points_per_batch,
-                                                           'states_dim': self.hidden_state_dim})
+        print()
+        print('Init ProximalEventsHistory with max_delay:', 2 * self.max_predict_time + 1, ', states_dim:', self.input_state_dim)
+
+        self.input_prox = ProximalEventsHistory(params={'max_delay': 2 * self.max_predict_time + 1,  # always taking the middle for one training point!
+                                                        'states_dim': self.input_state_dim})
+
+        self.input_prox_right_history = StatesLimitedHistory(params={'max_delay': self.num_training_points_per_batch,
+                                                                     'states_dim_list': [self.input_state_dim],
+                                                                     'store_extra_data': False})
+
+        self.input_prox_left_history = StatesLimitedHistory(params={'max_delay': self.num_training_points_per_batch,
+                                                                    'states_dim_list': [self.input_state_dim],
+                                                                    'store_extra_data': False})
+
+        # self.context_history = BinaryEventsHistory(params={'max_delay': 2 * self.max_predict_time + self.num_training_points_per_batch,
+        #                                                    'states_dim': self.hidden_state_dim})
+
         # for storing self output as context
 
         # input size to net: input_state_dim + context_state_dim
@@ -177,73 +190,91 @@ class EventPredictBrain(object):
         # if np.count_nonzero(input_state) == 0:
         #     return
 
-        self.input_history.store_new_states(newest_states_list=[input_state])
+        #         self.input_prox = ProximalEventsHistory(params={'max_delay': 2 * self.max_predict_time + 1,  # always taking the middle for one training point!
+        #                                                         'states_dim': self.input_state_dim})
+        #
+        #         self.input_prox_history = StatesLimitedHistory(params={'max_delay': self.num_training_points_per_batch,
+        #                                                                'states_dim_list': [self.input_state_dim]})
 
-        # *************** step network ***************
+        # print(np.sum(input_state))
 
-        # (1) use most recent history to get all most recent input times
-        # (2) transform times to values
-        last_input_times = self.input_history.get_last_event_times(delay=0)
-        input_values = np.exp(-last_input_times * self.exp_decay)
-        mlp_input = input_values.copy()
+        self.input_prox.store_new_states(binary_states_arr=input_state.astype(np.int))
 
-        # (3) get context times, transform to values
-        # last_context_times = self.context_history.get_last_event_times_before(delay=0)
-        # context_values = np.exp(-last_input_times * 0.06)
-        # mlp_input = np.concatenate((mlp_input, context_values))
+        if self.t > 2 * self.max_predict_time + 1:
 
-        # (4) step MLP (if trained already)
-        if self.net_trained_once:
-            output_values = self.net.predict(X=mlp_input)
-            output_values[output_values==0] = 1e-12
-            predicted_next_event_times = -np.log(output_values)/self.exp_decay
+            # get middle as the training point
+            prox_right_arr, prox_left_arr = self.input_prox.get_right_left_from_middle()
 
-            # TODO cap at max_predict_time; plot against "real" future event times
-            # TODO also need to evaluate and plot hidden layer values over time
+            self.input_prox_right_history.store_new_states(newest_states_list=[prox_right_arr])
+            self.input_prox_left_history.store_new_states(newest_states_list=[prox_left_arr])
 
-        # (5) update context states history (from step, or zero values otherwise)
-        # self.context_history.store_new_states(newest_states_list=[context_state])
 
-        # *************** train network ***************
+        if False:
+            # *************** step network ***************
 
-        if self.t > self.last_train_t + self.retrain_every_k_steps:
+            # (1) use most recent history to get all most recent input times
+            # (2) transform times to values
+            last_input_times = self.input_history.get_last_event_times(delay=0)
+            input_values = np.exp(-last_input_times * self.exp_decay)
+            mlp_input = input_values.copy()
 
-            # AND if there is enough data for training!
+            # (3) get context times, transform to values
+            # last_context_times = self.context_history.get_last_event_times_before(delay=0)
+            # context_values = np.exp(-last_input_times * 0.06)
+            # mlp_input = np.concatenate((mlp_input, context_values))
 
-            # (1) get forward input history for batch
-            #   this is the least recent from self.input_history, but stepwise delay
-            #   TODO: use ? self.max_predict_time, self.num_training_points_per_batch
-            train_input_times = self.input_history.get_last_event_times_mat(delay_max=self.max_predict_time + self.num_training_points_per_batch,
-                                                                            delay_min=self.max_predict_time + 0,
-                                                                            time_ref_order=1)  # order=1: time=0 is at less delay in returned times
-            train_input_values = np.exp(-train_input_times * self.exp_decay)
-            mlp_input_train = train_input_values
+            # (4) step MLP (if trained already)
+            if self.net_trained_once:
+                output_values = self.net.predict(X=mlp_input)
+                output_values[output_values==0] = 1e-12
+                predicted_next_event_times = -np.log(output_values)/self.exp_decay
 
-            # (2) get context input history for batch
-            # train_context_times
+                # TODO cap at max_predict_time; plot against "real" future event times
+                # TODO also need to evaluate and plot hidden layer values over time
 
-            # (3) get output history for batch
-            #   this is the most recent from self.input_history
-            #   i.e. the prediction
-            train_output_times = self.input_history.get_last_event_times_mat(delay_max=self.num_training_points_per_batch,
-                                                                             delay_min=0,
-                                                                             time_ref_order=-1)  # order -1: time=0 is at more delay in returned times
-            train_output_values = np.exp(-train_output_times * self.exp_decay)
-            mlp_output_train = train_output_values
+            # (5) update context states history (from step, or zero values otherwise)
+            # self.context_history.store_new_states(newest_states_list=[context_state])
 
-            # (4) do training for batch
+            # *************** train network ***************
 
-            # X: (n_samples, n_features), Y:  (n_samples, n_outputs)
-            print('starting:    self.net.fit(X=mlp_input_train, y=mlp_output_train)    ...')
-            print()
+            if self.t > self.last_train_t + self.retrain_every_k_steps:
 
-            self.net.fit(X=mlp_input_train, y=mlp_output_train)
+                # AND if there is enough data for training!
 
-            print('finished training!')
-            print()
+                # (1) get forward input history for batch
+                #   this is the least recent from self.input_history, but stepwise delay
+                #   TODO: use ? self.max_predict_time, self.num_training_points_per_batch
+                train_input_times = self.input_history.get_last_event_times_mat(delay_max=self.max_predict_time + self.num_training_points_per_batch,
+                                                                                delay_min=self.max_predict_time + 0,
+                                                                                time_ref_order=1)  # order=1: time=0 is at less delay in returned times
+                train_input_values = np.exp(-train_input_times * self.exp_decay)
+                mlp_input_train = train_input_values
 
-            self.last_train_t = self.t
-            self.net_trained_once = True
+                # (2) get context input history for batch
+                # train_context_times
+
+                # (3) get output history for batch
+                #   this is the most recent from self.input_history
+                #   i.e. the prediction
+                train_output_times = self.input_history.get_last_event_times_mat(delay_max=self.num_training_points_per_batch,
+                                                                                 delay_min=0,
+                                                                                 time_ref_order=-1)  # order -1: time=0 is at more delay in returned times
+                train_output_values = np.exp(-train_output_times * self.exp_decay)
+                mlp_output_train = train_output_values
+
+                # (4) do training for batch
+
+                # X: (n_samples, n_features), Y:  (n_samples, n_outputs)
+                print('starting:    self.net.fit(X=mlp_input_train, y=mlp_output_train)    ...')
+                print()
+
+                self.net.fit(X=mlp_input_train, y=mlp_output_train)
+
+                print('finished training!')
+                print()
+
+                self.last_train_t = self.t
+                self.net_trained_once = True
 
         # *************** plots ***************
 

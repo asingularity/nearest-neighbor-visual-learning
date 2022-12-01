@@ -83,7 +83,7 @@ def get_brain_params():
         'num_rfs': 64,  # 64
         'lr': 1.0 / 100,  # 1000
         'max_time': 5000000,
-        'do_plots_every_k_sec': 5,  # or None
+        'do_plots_every_k_sec': None,  # 5 or None
     }
 
     return brain_params
@@ -93,7 +93,7 @@ def get_visualizer_params():
     params = {
         'color_enabled': False,
         'fps_display_interval': 6,
-        'image_display_secs_fast': 0.1,  # 8+ for good speed
+        'image_display_secs_fast': 10.1,  # 8+ for good speed
         'waitKey_time_fast': 1,  # 1, 100, 5000
         'image_display_secs_slow': 0.0, # 0.01  # 2,  # 0: every frame
         'waitKey_time_slow': 1,  # 1, 100, 5000
