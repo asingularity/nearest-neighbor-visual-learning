@@ -2,6 +2,7 @@
 import pickle
 import numpy as np
 np.set_printoptions(suppress=True)
+from cython_proxim import cython_compute_proximal
 
 
 class StatesHistory(object):
@@ -155,18 +156,22 @@ class StatesLimitedHistory(object):
             return None
 
 
-class BinaryEventsHistory(object):
+class ProximalEventsHistory(object):
     def __init__(self, params):
-        pass
+        self.max_delay = params['max_delay']
+        self.states_dim = params['states_dim']
+
+        self.inf_val = 1000  # "infinite"
+        self.events_history = np.zeros((self.states_dim, self.max_delay))
+        self.right_proximal = self.inf_val * np.ones((self.states_dim, self.max_delay))
+        self.left_proximal = self.inf_val * np.ones((self.states_dim, self.max_delay))
 
     def store_new_states(self, binary_states_arr):
         self.events_history = np.roll(self.events_history, 1, axis=1)
         self.events_history[:, 0] = binary_states_arr[:]
 
         # or just use cython to calculate right_proximal, left_proximal
-
-
-
+        cython_compute_proximal(self.max_delay, self.inf_val, self.states_dim, self.events_history, self.right_proximal, self.left_proximal)
 
         # right proximal
         # (1) increment? roll? set to 0 for event?
@@ -176,50 +181,9 @@ class BinaryEventsHistory(object):
         # self.right_proximal = np.roll(self.right_proximal, 1, axis=1)
         # self.left_proximal = np.roll(self.left_proximal, 1, axis=1)
 
-
-
-
     def get_proximal_events_mats(self):
 
-
         return self.right_proximal, self.left_proximal
-
-
-
-if __name__ == '__main__':
-
-    # test binary. show matrices for several steps of random!
-    # and speed test
-
-
-
-
-
-    test_states_limited = False
-    if test_states_limited:
-        tmp = StatesLimitedHistory(params={'max_delay': 10,
-                                           'states_dim_list': [3],
-                                           'store_extra_data': False})
-        np.random.seed(0)
-        print()
-        for t in range(20):
-            rand_data = np.random.random(3)
-
-            print('t', t, 'data', rand_data)
-            tmp.store_new_states(newest_states_list=[rand_data])
-
-        print()
-        tmp_data = tmp.get_state_sequence(state_index=0, delay_long=9, delay_short=0, oldest_first=False)
-        print(tmp_data)
-
-        print()
-        tmp_data = tmp.get_state(state_index=0, delay=0)
-        print(tmp_data)
-        print()
-        tmp_data = tmp.get_state(state_index=0, delay=9)
-        print(tmp_data)
-
-
 
 
 

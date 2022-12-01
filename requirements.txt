@@ -4,3 +4,4 @@ ib_insync
 scikit-learn
 opencv-python
 matplotlib
+cython
