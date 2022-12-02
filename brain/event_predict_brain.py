@@ -190,17 +190,11 @@ class EventPredictBrain(object):
         # if np.count_nonzero(input_state) == 0:
         #     return
 
-        #         self.input_prox = ProximalEventsHistory(params={'max_delay': 2 * self.max_predict_time + 1,  # always taking the middle for one training point!
-        #                                                         'states_dim': self.input_state_dim})
-        #
-        #         self.input_prox_history = StatesLimitedHistory(params={'max_delay': self.num_training_points_per_batch,
-        #                                                                'states_dim_list': [self.input_state_dim]})
-
-        # print(np.sum(input_state))
-
         self.input_prox.store_new_states(binary_states_arr=input_state.astype(np.int))
 
         if self.t > 2 * self.max_predict_time + 1:
+
+            # *************** step history for training ***************
 
             # get middle as the training point
             prox_right_arr, prox_left_arr = self.input_prox.get_right_left_from_middle()
@@ -208,14 +202,13 @@ class EventPredictBrain(object):
             self.input_prox_right_history.store_new_states(newest_states_list=[prox_right_arr])
             self.input_prox_left_history.store_new_states(newest_states_list=[prox_left_arr])
 
-
-        if False:
             # *************** step network ***************
 
-            # (1) use most recent history to get all most recent input times
-            # (2) transform times to values
-            last_input_times = self.input_history.get_last_event_times(delay=0)
-            input_values = np.exp(-last_input_times * self.exp_decay)
+            # prox_right: how far in the future is the next event after now; interpreteable on the right side of history diagram
+            # prox_left: how far in the past was the last event before now; interpretable on the left side of the history diagram
+
+            prox_left_now = self.input_prox.get_prox_left_now()
+            input_values = np.exp(-prox_left_now * self.exp_decay)
             mlp_input = input_values.copy()
 
             # (3) get context times, transform to values
@@ -227,9 +220,14 @@ class EventPredictBrain(object):
             if self.net_trained_once:
                 output_values = self.net.predict(X=mlp_input)
                 output_values[output_values==0] = 1e-12
-                predicted_next_event_times = -np.log(output_values)/self.exp_decay
 
-                # TODO cap at max_predict_time; plot against "real" future event times
+                predicted_prox_right = -np.log(output_values)/self.exp_decay
+
+                # TODO plot against "real" future event times; cap at max_predict_time->
+                #   ***
+                #  TODO HOW????? need to get this prox_right delayed by max_predict_time! what is reference point!
+                #   ***
+                #   plot as events in time; use times in predicted_prox_right
                 # TODO also need to evaluate and plot hidden layer values over time
 
             # (5) update context states history (from step, or zero values otherwise)
@@ -237,29 +235,25 @@ class EventPredictBrain(object):
 
             # *************** train network ***************
 
-            if self.t > self.last_train_t + self.retrain_every_k_steps:
-
-                # AND if there is enough data for training!
+            if self.t > self.last_train_t + self.retrain_every_k_steps and self.t > self.num_training_points_per_batch + 2 * self.max_predict_time + 1:
 
                 # (1) get forward input history for batch
                 #   this is the least recent from self.input_history, but stepwise delay
                 #   TODO: use ? self.max_predict_time, self.num_training_points_per_batch
-                train_input_times = self.input_history.get_last_event_times_mat(delay_max=self.max_predict_time + self.num_training_points_per_batch,
-                                                                                delay_min=self.max_predict_time + 0,
-                                                                                time_ref_order=1)  # order=1: time=0 is at less delay in returned times
-                train_input_values = np.exp(-train_input_times * self.exp_decay)
+
+                train_prox_left = self.input_prox_left_history.get_state_array_history()  # TODO needs to do roll to align-left the internally unaligned matrix
+                train_input_values = np.exp(-train_prox_left * self.exp_decay)
                 mlp_input_train = train_input_values
 
                 # (2) get context input history for batch
-                # train_context_times
+                # mlp_input_train.append(...)
 
                 # (3) get output history for batch
                 #   this is the most recent from self.input_history
                 #   i.e. the prediction
-                train_output_times = self.input_history.get_last_event_times_mat(delay_max=self.num_training_points_per_batch,
-                                                                                 delay_min=0,
-                                                                                 time_ref_order=-1)  # order -1: time=0 is at more delay in returned times
-                train_output_values = np.exp(-train_output_times * self.exp_decay)
+
+                train_prox_right = self.input_prox_right_history.get_state_array_history()  # TODO needs to do roll to align-left the internally unaligned matrix
+                train_output_values = np.exp(-train_prox_right * self.exp_decay)
                 mlp_output_train = train_output_values
 
                 # (4) do training for batch

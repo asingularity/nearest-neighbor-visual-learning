@@ -189,5 +189,8 @@ class ProximalEventsHistory(object):
 
         return prox_right_arr, prox_left_arr
 
+    def get_prox_left_now(self):
+
+        return self.left_proximal[:, 0]
 
 
