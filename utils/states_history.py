@@ -61,6 +61,8 @@ class StatesLimitedHistory(object):
                 if self.store_extra_data:
                     self.extra_data_list.append([None] * self.max_delay)
         self.t_mod = 0
+        self.prev_t_mod = 0
+        self.next_t_mod = 0
 
     def store_new_states(self, newest_states_list, extra_data_list=None):
         self.process_new_states(newest_states_list=newest_states_list, extra_data_list=extra_data_list)
@@ -72,9 +74,15 @@ class StatesLimitedHistory(object):
                 assert len(extra_data_list) == len(self.extra_data_list), 'Error: invalid extra data length!'
                 assert len(newest_states_list) == len(self.extra_data_list), 'Error: invalid extra data length!'
 
+            self.prev_t_mod = self.t_mod
+
             self.t_mod += 1
             if self.t_mod == self.max_delay:
                 self.t_mod = 0
+
+            self.next_t_mod = self.t_mod + 1
+            if self.next_t_mod == self.max_delay:
+                self.next_t_mod = 0
 
             state_index = 0
             for state in newest_states_list:
@@ -135,14 +143,29 @@ class StatesLimitedHistory(object):
         else:
             return None
 
-    def get_state_array_history(self, delay_long, delay_short, state_index=0, oldest_first=True):
+    def get_state_array_history(self):
+        # , delay_long, delay_short, state_index=0, oldest_first=True):
+        # assert oldest_first is True
+        state_index = 0
 
-        assert oldest_first is True
+        # by default: use existing ordering, so column 0 is the most recent data
+        # needs to do roll to align-left the internally unaligned matrix
+        #   need to roll history array by self.t_mod
 
-        history_array = self.state_arrays_list[state_index].copy()
+        state_arr = self.state_arrays_list[state_index].copy()
 
-        # need to roll history array by self.t_mod
-        # instead, make a spikes states history class
+        # print('self.t_mod', self.t_mod)
+
+        #print(self.prev_t_mod)
+        state_arr = np.roll(state_arr, -self.next_t_mod, axis=0)
+        #print('self.prev_t_mode', self.prev_t_mod, 'self.t_mod', self.t_mod, 'next', self.next_t_mod)
+
+        # currently it is: each time step is row. newest data is last row
+        # need to put it in format ready for training
+
+        # TODO WE ARE HERE NOW DEC 5 2022
+
+        return state_arr
 
     def get_newest_states_list(self):
         if self.active:

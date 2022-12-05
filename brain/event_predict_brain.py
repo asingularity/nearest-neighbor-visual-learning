@@ -224,10 +224,8 @@ class EventPredictBrain(object):
                 predicted_prox_right = -np.log(output_values)/self.exp_decay
 
                 # TODO plot against "real" future event times; cap at max_predict_time->
-                #   ***
-                #  TODO HOW????? need to get this prox_right delayed by max_predict_time! what is reference point!
-                #   ***
-                #   plot as events in time; use times in predicted_prox_right
+                #       ground truth: get index of prox_right (from left or right?) that is same value as delay since prediction
+                #       plot as events in time; use times in predicted_prox_right
                 # TODO also need to evaluate and plot hidden layer values over time
 
             # (5) update context states history (from step, or zero values otherwise)
@@ -238,10 +236,8 @@ class EventPredictBrain(object):
             if self.t > self.last_train_t + self.retrain_every_k_steps and self.t > self.num_training_points_per_batch + 2 * self.max_predict_time + 1:
 
                 # (1) get forward input history for batch
-                #   this is the least recent from self.input_history, but stepwise delay
-                #   TODO: use ? self.max_predict_time, self.num_training_points_per_batch
 
-                train_prox_left = self.input_prox_left_history.get_state_array_history()  # TODO needs to do roll to align-left the internally unaligned matrix
+                train_prox_left = self.input_prox_left_history.get_state_array_history()
                 train_input_values = np.exp(-train_prox_left * self.exp_decay)
                 mlp_input_train = train_input_values
 
@@ -249,10 +245,8 @@ class EventPredictBrain(object):
                 # mlp_input_train.append(...)
 
                 # (3) get output history for batch
-                #   this is the most recent from self.input_history
-                #   i.e. the prediction
 
-                train_prox_right = self.input_prox_right_history.get_state_array_history()  # TODO needs to do roll to align-left the internally unaligned matrix
+                train_prox_right = self.input_prox_right_history.get_state_array_history()
                 train_output_values = np.exp(-train_prox_right * self.exp_decay)
                 mlp_output_train = train_output_values
 

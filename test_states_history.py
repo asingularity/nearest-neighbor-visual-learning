@@ -12,68 +12,99 @@ if __name__ == '__main__':
     # (2) speed test
     #       realistically large matrix, many steps, use FPS
 
+    test_proximal_events = False
 
-    function_test = False
-    speed_test = True
+    if test_proximal_events:
+        function_test = False
+        speed_test = True
 
 
-    if function_test:
-        max_delay = 6
-        states_dim = 3
+        if function_test:
+            max_delay = 6
+            states_dim = 3
 
-        tmp = ProximalEventsHistory(params={'max_delay': max_delay,
-                                          'states_dim': states_dim})
+            tmp = ProximalEventsHistory(params={'max_delay': max_delay,
+                                              'states_dim': states_dim})
 
-        for step in range(10):
+            for step in range(10):
+                print()
+                print('>>>>>>>>>> >>>>>>>>>> >>>>>>>>>> step', step)
+                print()
+
+                rand_data = np.random.randint(low=0, high=1+1, size=(states_dim,))
+
+                print('rand_data', rand_data)
+                print()
+
+                tmp.store_new_states(binary_states_arr=rand_data)
+
+                print('events_history:')
+                print(tmp.events_history)
+                print()
+
+                print('right_proximal:')
+                print(tmp.right_proximal)
+                print()
+
+                print('left_proximal:')
+                print(tmp.left_proximal)
+
+                print()
+
+        if speed_test:
+            max_delay = 2 * 100 + 1  # 2 * max_predict_time
+            states_dim = 2 * 16 * 16  # * 10  # hidden_state_dim -> input_state_dim * 10 -> 2 * input_im_dim * input_im_dim * 10
+
+            fps = FPSCounter()
             print()
-            print('>>>>>>>>>> >>>>>>>>>> >>>>>>>>>> step', step)
+            print('Init ProximalEventsHistory with max_delay:', max_delay, ', states_dim:', states_dim)
+
+            tmp = ProximalEventsHistory(params={'max_delay': max_delay,
+                                                'states_dim': states_dim})
+
+            for step in range(10000):
+
+                rand_data = np.random.randint(low=0, high=1 + 1, size=(states_dim,))
+
+                tmp.store_new_states(binary_states_arr=rand_data)
+
+                fps.update()
+
+            fps.update(force_display=True)
             print()
 
-            rand_data = np.random.randint(low=0, high=1+1, size=(states_dim,))
 
-            print('rand_data', rand_data)
-            print()
+    test_states_limited = True
 
-            tmp.store_new_states(binary_states_arr=rand_data)
-
-            print('events_history:')
-            print(tmp.events_history)
-            print()
-
-            print('right_proximal:')
-            print(tmp.right_proximal)
-            print()
-
-            print('left_proximal:')
-            print(tmp.left_proximal)
-
-            print()
-
-    if speed_test:
-        max_delay = 2 * 100 + 1  # 2 * max_predict_time
-        states_dim = 2 * 16 * 16  # * 10  # hidden_state_dim -> input_state_dim * 10 -> 2 * input_im_dim * input_im_dim * 10
-
-        fps = FPSCounter()
-        print()
-        print('Init ProximalEventsHistory with max_delay:', max_delay, ', states_dim:', states_dim)
-
-        tmp = ProximalEventsHistory(params={'max_delay': max_delay,
-                                            'states_dim': states_dim})
-
-        for step in range(10000):
-
-            rand_data = np.random.randint(low=0, high=1 + 1, size=(states_dim,))
-
-            tmp.store_new_states(binary_states_arr=rand_data)
-
-            fps.update()
-
-        fps.update(force_display=True)
-        print()
-
-
-    test_states_limited = False
     if test_states_limited:
+        tmp = StatesLimitedHistory(params={'max_delay': 4,
+                                           'states_dim_list': [3],
+                                           'store_extra_data': False})
+
+        print()
+
+        for k in range(10):
+
+            print()
+            print('k', k)
+            print()
+
+            data_in = k * np.ones(3)
+            tmp.store_new_states(newest_states_list=[data_in])
+
+            tmp_data = tmp.get_state_sequence(state_index=0, delay_long=4, delay_short=0, oldest_first=False)
+
+            print('get_state_sequence')
+            print(tmp_data)
+            print()
+
+            tmp_data = tmp.get_state_array_history()
+
+            print('get_state_array_history')
+            print(tmp_data)
+            print()
+
+    if False:  #test_states_limited:
         tmp = StatesLimitedHistory(params={'max_delay': 10,
                                            'states_dim_list': [3],
                                            'store_extra_data': False})
