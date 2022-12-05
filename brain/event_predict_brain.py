@@ -1,6 +1,9 @@
+import os
+
 import time
 import cv2
 from sklearn.neural_network import MLPRegressor
+
 
 import numpy as np
 np.set_printoptions(suppress=True, precision=2)
@@ -59,7 +62,9 @@ class EventPredictBrain(object):
         self.exp_decay = 0.06  # 0.06: roughly matches 100 max predict time (use temp.py to plot and set)
         self.num_training_points_per_batch = 10000  # how many points for training one batch?
         self.retrain_every_k_steps = 5000  # how often to retrain network i.e. to train based on a new batch. half of num training points: half overlap to last batch
-        self.hidden_state_dim = self.input_state_dim * 10  # size of MLP hidden layer
+
+        # TODO dim expansion of *10 is too large here!
+        self.hidden_state_dim = self.input_state_dim * 2  # size of MLP hidden layer
 
         # why 2 * max_predict_time? this is the length of data you need for one training point: need max_predict_time behind, and max_predict_time_ahead
         #   why + num_training_points? this is how many training points you will actually have
@@ -218,7 +223,7 @@ class EventPredictBrain(object):
 
             # (4) step MLP (if trained already)
             if self.net_trained_once:
-                output_values = self.net.predict(X=mlp_input)
+                output_values = self.net.predict(X=mlp_input[np.newaxis, :]).flatten()
                 output_values[output_values==0] = 1e-12
 
                 predicted_prox_right = -np.log(output_values)/self.exp_decay
@@ -254,6 +259,13 @@ class EventPredictBrain(object):
 
                 # X: (n_samples, n_features), Y:  (n_samples, n_outputs)
                 print('starting:    self.net.fit(X=mlp_input_train, y=mlp_output_train)    ...')
+                print()
+
+                print()
+                print('train_prox_left', train_prox_left.shape)
+                print('train_prox_right', train_prox_right.shape)
+                print('mlp_input_train', mlp_input_train.shape)
+                print('mlp_output_train', mlp_output_train.shape)
                 print()
 
                 self.net.fit(X=mlp_input_train, y=mlp_output_train)

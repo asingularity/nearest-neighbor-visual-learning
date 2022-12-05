@@ -161,9 +161,6 @@ class StatesLimitedHistory(object):
         #print('self.prev_t_mode', self.prev_t_mod, 'self.t_mod', self.t_mod, 'next', self.next_t_mod)
 
         # currently it is: each time step is row. newest data is last row
-        # need to put it in format ready for training
-
-        # TODO WE ARE HERE NOW DEC 5 2022
 
         return state_arr
 

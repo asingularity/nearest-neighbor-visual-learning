@@ -89,10 +89,10 @@ if __name__ == '__main__':
             print('k', k)
             print()
 
-            data_in = k * np.ones(3)
+            data_in = k * np.arange(1, 4)
             tmp.store_new_states(newest_states_list=[data_in])
 
-            tmp_data = tmp.get_state_sequence(state_index=0, delay_long=4, delay_short=0, oldest_first=False)
+            tmp_data = tmp.get_state_sequence(state_index=0, delay_long=4, delay_short=0, oldest_first=True)
 
             print('get_state_sequence')
             print(tmp_data)
