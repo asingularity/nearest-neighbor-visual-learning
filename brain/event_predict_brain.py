@@ -167,11 +167,13 @@ class EventPredictBrain(object):
 
             actual_times = self.input_prox_right_history.get_state(delay=0, state_index=0)
             # where do "1000" values here come from? it is "inf_val" in ProximalEventsHistory
-            actual_times[actual_times > self.max_predict_time] = self.max_predict_time  # infinite in future: peg to 100
+            # actual_times[actual_times > self.max_predict_time] = self.max_predict_time  # infinite in future: peg to 100
+            actual_times = np.ma.masked_where(actual_times > self.max_predict_time, actual_times)
 
             predicted_times = self.predicted_prox_right_history.get_state(delay=self.max_predict_time, state_index=0)
             # why this is at 500 sometimes? this is 1e-12: basically no event. also set to max predict time for now
-            predicted_times[predicted_times > self.max_predict_time] = self.max_predict_time
+            # predicted_times[predicted_times > self.max_predict_time] = self.max_predict_time
+            predicted_times = np.ma.masked_where(predicted_times > self.max_predict_time, predicted_times)
 
             # make a "raster" of this prediction
             self.ax_bar.cla()
