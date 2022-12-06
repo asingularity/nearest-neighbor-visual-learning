@@ -60,8 +60,8 @@ class EventPredictBrain(object):
 
         self.max_predict_time = 100  # assume next event time > max_predict_time == infinite
         self.exp_decay = 0.06  # 0.06: roughly matches 100 max predict time (use temp.py to plot and set)
-        self.num_training_points_per_batch = 10000  # how many points for training one batch?
-        self.retrain_every_k_steps = 5000  # how often to retrain network i.e. to train based on a new batch. half of num training points: half overlap to last batch
+        self.num_training_points_per_batch = 20000  # 10K how many points for training one batch?
+        self.retrain_every_k_steps = 20000  # 5K how often to retrain network i.e. to train based on a new batch. half of num training points: half overlap to last batch
 
         # TODO dim expansion of *10 is too large here!
         self.hidden_state_dim = self.input_state_dim * 2  # size of MLP hidden layer
@@ -78,6 +78,12 @@ class EventPredictBrain(object):
         self.input_prox_right_history = StatesLimitedHistory(params={'max_delay': self.num_training_points_per_batch,
                                                                      'states_dim_list': [self.input_state_dim],
                                                                      'store_extra_data': False})
+
+        assert self.num_training_points_per_batch > self.max_predict_time, 'Error: Need at least max_predict_time in input_prox_right_history for comparison to prediction!'
+
+        self.predicted_prox_right_history = StatesLimitedHistory(params={'max_delay': self.max_predict_time,
+                                                                         'states_dim_list': [self.input_state_dim],
+                                                                         'store_extra_data': False})
 
         self.input_prox_left_history = StatesLimitedHistory(params={'max_delay': self.num_training_points_per_batch,
                                                                     'states_dim_list': [self.input_state_dim],
@@ -101,12 +107,13 @@ class EventPredictBrain(object):
         self.input_raster_history = np.zeros((self.input_state_dim, self.raster_steps), np.uint8)
         self.rfs_raster_history = np.zeros((self.num_rfs, self.raster_steps), np.uint8)
 
-        self.fig_bar = plt.figure(figsize=(40, 20))
+        self.fig_bar = plt.figure(figsize=(20, 40))
         self.ax_bar = self.fig_bar.add_subplot(1, 1, 1)
         self.ax_bar.cla()
         self.ax_bar.get_xaxis().get_major_formatter().set_scientific(False)
         self.ax_bar.get_yaxis().get_major_formatter().set_scientific(False)
 
+        self.plot_num = 0
         # self.fig_bar = plt.figure(figsize=(40, 40))
         # self.ax_bar_list = []
         # self.rfs_to_plot = 16  # 8 or self.num_rfs
@@ -149,16 +156,47 @@ class EventPredictBrain(object):
 
     def do_plots(self):
         # look at dynamic_coincidence.py, others
+        if self.net_trained_once:
 
-        self.ax_bar.cla()
-        num_rf = self.input_raster_history.shape[0]
-        raster_plot = np.transpose(np.multiply(self.input_raster_history[0:num_rf, :],
-                                               np.arange(num_rf)[:, np.newaxis]))
+            # self.input_prox_right_history stores from:
+            #   ProximalEventsHistory.get_right_left_from_middle,
+            # which uses:
+            #   mid_index = int((self.max_delay - 1) / 2)
+            # where:
+            #   max_delay = 2 * self.max_predict_time + 1
 
-        t = np.arange(raster_plot.shape[0])
-        self.ax_bar.plot(t, raster_plot, color='b', marker='.', linestyle='')
-        self.fig_bar.savefig(self.plots_folder + "/raster_input.png", dpi=100)
+            actual_times = self.input_prox_right_history.get_state(delay=0, state_index=0)
+            # where do "1000" values here come from? it is "inf_val" in ProximalEventsHistory
+            actual_times[actual_times > self.max_predict_time] = self.max_predict_time  # infinite in future: peg to 100
 
+            predicted_times = self.predicted_prox_right_history.get_state(delay=self.max_predict_time, state_index=0)
+            # why this is at 500 sometimes? this is 1e-12: basically no event. also set to max predict time for now
+            predicted_times[predicted_times > self.max_predict_time] = self.max_predict_time
+
+            # make a "raster" of this prediction
+            self.ax_bar.cla()
+            self.ax_bar.plot(actual_times, np.arange(actual_times.shape[0]), color='g', marker='o', linestyle='')
+            self.ax_bar.plot(predicted_times, np.arange(predicted_times.shape[0]), color='b', marker='o', linestyle='')
+
+            # for k in range(predicted_times.shape[0]):
+            #     self.ax_bar.axhline(y=k, color='g')
+
+            self.ax_bar.set_ylim(-0.5, predicted_times.shape[0] - 0.5)
+
+            self.fig_bar.savefig(self.plots_folder + "/actual_g_predict_b_" + str(self.plot_num) + ".png", dpi=100)
+
+            self.plot_num += 1
+
+        # THIS IS NORMAL INPUT RASTER
+        # self.ax_bar.cla()
+        # num_rf = self.input_raster_history.shape[0]
+        # raster_plot = np.transpose(np.multiply(self.input_raster_history[0:num_rf, :],
+        #                                        np.arange(num_rf)[:, np.newaxis]))
+        # t = np.arange(raster_plot.shape[0])
+        # self.ax_bar.plot(t, raster_plot, color='b', marker='.', linestyle='')
+        # self.fig_bar.savefig(self.plots_folder + "/raster_input.png", dpi=100)
+
+        # THIS IS RF RASTER OLD?
         # self.ax_2.cla()
         # num_rf = self.rfs_0_raster_history.shape[0]
         # raster_plot = np.transpose(np.multiply(self.rfs_0_raster_history[0:num_rf, max(0, self.t - 200):self.t],
@@ -210,7 +248,9 @@ class EventPredictBrain(object):
             # *************** step network ***************
 
             # prox_right: how far in the future is the next event after now; interpreteable on the right side of history diagram
+            #   how much time "from now"
             # prox_left: how far in the past was the last event before now; interpretable on the left side of the history diagram
+            #   how much time "ago"
 
             prox_left_now = self.input_prox.get_prox_left_now()
             input_values = np.exp(-prox_left_now * self.exp_decay)
@@ -224,11 +264,18 @@ class EventPredictBrain(object):
             # (4) step MLP (if trained already)
             if self.net_trained_once:
                 output_values = self.net.predict(X=mlp_input[np.newaxis, :]).flatten()
-                output_values[output_values==0] = 1e-12
+
+                output_values[output_values<=0] = 1e-12
+                output_values[output_values>1] = 1
 
                 predicted_prox_right = -np.log(output_values)/self.exp_decay
 
-                # TODO plot against "real" future event times; cap at max_predict_time->
+                self.predicted_prox_right_history.store_new_states(newest_states_list=[predicted_prox_right])
+
+                # print('output_values', output_values)
+                # print('predicted_prox_right', predicted_prox_right)
+
+                # plot against "real" future event times; cap at max_predict_time->
                 #       ground truth: get index of prox_right (from left or right?) that is same value as delay since prediction
                 #       plot as events in time; use times in predicted_prox_right
                 # TODO also need to evaluate and plot hidden layer values over time
