@@ -113,7 +113,17 @@ class EventPredictBrain(object):
         self.ax_bar.get_xaxis().get_major_formatter().set_scientific(False)
         self.ax_bar.get_yaxis().get_major_formatter().set_scientific(False)
 
+        self.fig_bar_horiz = plt.figure(figsize=(40, 20))
+        self.ax_bar_horiz = self.fig_bar_horiz.add_subplot(1, 1, 1)
+        self.ax_bar_horiz.cla()
+        self.ax_bar_horiz.get_xaxis().get_major_formatter().set_scientific(False)
+        self.ax_bar_horiz.get_yaxis().get_major_formatter().set_scientific(False)
+
         self.plot_num = 0
+
+        self.prediction_error = np.zeros(10000000)
+        self.error_t = 0
+
         # self.fig_bar = plt.figure(figsize=(40, 40))
         # self.ax_bar_list = []
         # self.rfs_to_plot = 16  # 8 or self.num_rfs
@@ -154,26 +164,34 @@ class EventPredictBrain(object):
         print('setting plots folder: ', self.plots_folder)
         print()
 
+    def _get_last_actual_and_predicted_times(self):
+        # gets delayed predicted times, and actual times, for plotting or error comparison
+        # masked for infinite time
+
+        # self.input_prox_right_history stores from:
+        #   ProximalEventsHistory.get_right_left_from_middle,
+        # which uses:
+        #   mid_index = int((self.max_delay - 1) / 2)
+        # where:
+        #   max_delay = 2 * self.max_predict_time + 1
+
+        actual_times = self.input_prox_right_history.get_state(delay=0, state_index=0)
+        # where do "1000" values here come from? it is "inf_val" in ProximalEventsHistory
+        # actual_times[actual_times > self.max_predict_time] = self.max_predict_time  # infinite in future: peg to 100
+        actual_times = np.ma.masked_where(actual_times > self.max_predict_time, actual_times)
+
+        predicted_times = self.predicted_prox_right_history.get_state(delay=self.max_predict_time, state_index=0)
+        # why this is at 500 sometimes? this is 1e-12: basically no event. also set to max predict time for now
+        # predicted_times[predicted_times > self.max_predict_time] = self.max_predict_time
+        predicted_times = np.ma.masked_where(predicted_times > self.max_predict_time, predicted_times)
+
+        return actual_times, predicted_times
+
     def do_plots(self):
         # look at dynamic_coincidence.py, others
         if self.net_trained_once:
 
-            # self.input_prox_right_history stores from:
-            #   ProximalEventsHistory.get_right_left_from_middle,
-            # which uses:
-            #   mid_index = int((self.max_delay - 1) / 2)
-            # where:
-            #   max_delay = 2 * self.max_predict_time + 1
-
-            actual_times = self.input_prox_right_history.get_state(delay=0, state_index=0)
-            # where do "1000" values here come from? it is "inf_val" in ProximalEventsHistory
-            # actual_times[actual_times > self.max_predict_time] = self.max_predict_time  # infinite in future: peg to 100
-            actual_times = np.ma.masked_where(actual_times > self.max_predict_time, actual_times)
-
-            predicted_times = self.predicted_prox_right_history.get_state(delay=self.max_predict_time, state_index=0)
-            # why this is at 500 sometimes? this is 1e-12: basically no event. also set to max predict time for now
-            # predicted_times[predicted_times > self.max_predict_time] = self.max_predict_time
-            predicted_times = np.ma.masked_where(predicted_times > self.max_predict_time, predicted_times)
+            actual_times, predicted_times = self._get_last_actual_and_predicted_times()
 
             # make a "raster" of this prediction
             self.ax_bar.cla()
@@ -186,6 +204,12 @@ class EventPredictBrain(object):
             self.ax_bar.set_ylim(-0.5, predicted_times.shape[0] - 0.5)
 
             self.fig_bar.savefig(self.plots_folder + "/actual_g_predict_b_" + str(self.plot_num) + ".png", dpi=100)
+
+            self.ax_bar_horiz.cla()
+            self.ax_bar_horiz.plot(self.prediction_error[0:self.error_t+1])
+            mean_err = np.mean(self.prediction_error[0:self.error_t+1])
+            self.ax_bar_horiz.axhline(y=mean_err, color='r')
+            self.fig_bar_horiz.savefig(self.plots_folder + "/predict_error_" + str(self.plot_num) + ".png", dpi=100)
 
             self.plot_num += 1
 
@@ -274,12 +298,12 @@ class EventPredictBrain(object):
 
                 self.predicted_prox_right_history.store_new_states(newest_states_list=[predicted_prox_right])
 
-                # print('output_values', output_values)
-                # print('predicted_prox_right', predicted_prox_right)
+                # plot error over time
+                actual_times, predicted_times = self._get_last_actual_and_predicted_times()
+                error = np.mean(np.abs(actual_times - predicted_times))
+                self.prediction_error[self.error_t] = error
+                self.error_t += 1
 
-                # plot against "real" future event times; cap at max_predict_time->
-                #       ground truth: get index of prox_right (from left or right?) that is same value as delay since prediction
-                #       plot as events in time; use times in predicted_prox_right
                 # TODO also need to evaluate and plot hidden layer values over time
 
             # (5) update context states history (from step, or zero values otherwise)
