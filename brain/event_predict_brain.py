@@ -3,6 +3,7 @@ import os
 import time
 import cv2
 from sklearn.neural_network import MLPRegressor
+from brain.tf_mlp import TFRegressor
 
 
 import numpy as np
