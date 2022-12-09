@@ -2,8 +2,8 @@ import os
 
 import time
 import cv2
-from sklearn.neural_network import MLPRegressor
-from brain.tf_mlp import TFRegressor
+#from sklearn.neural_network import MLPRegressor
+from brain.tf_mlp import TFRegressor as MLPRegressor
 
 
 import numpy as np
@@ -96,7 +96,8 @@ class EventPredictBrain(object):
         # for storing self output as context
 
         # input size to net: input_state_dim + context_state_dim
-        self.net = MLPRegressor(hidden_layer_sizes=(self.hidden_state_dim,), random_state=1, max_iter=500)
+        # !!! this is no longer compatible with sklearn MLPRegressor! due to output_layer_size
+        self.net = MLPRegressor(hidden_layer_sizes=(self.hidden_state_dim,), random_state=1, max_iter=500, output_layer_size=self.input_state_dim)
 
         self.last_train_t = -np.inf
         self.net_trained_once = False
