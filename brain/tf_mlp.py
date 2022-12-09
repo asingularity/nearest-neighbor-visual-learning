@@ -1,5 +1,10 @@
 
 import tensorflow as tf
+
+# helps slow predict on small batch?
+tf.compat.v1.disable_eager_execution()
+
+
 num_gpu = len(tf.config.list_physical_devices('GPU'))
 print()
 print("Num GPUs Available: ", num_gpu)
