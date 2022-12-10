@@ -65,7 +65,7 @@ class EventPredictBrain(object):
         self.retrain_every_k_steps = 20000  # 5K how often to retrain network i.e. to train based on a new batch. half of num training points: half overlap to last batch
 
         # TODO dim expansion of *10 is too large here!
-        self.hidden_state_dim = self.input_state_dim * 2  # size of MLP hidden layer
+        self.hidden_state_dim = self.input_state_dim * 10  # size of MLP hidden layer
 
         # why 2 * max_predict_time? this is the length of data you need for one training point: need max_predict_time behind, and max_predict_time_ahead
         #   why + num_training_points? this is how many training points you will actually have
