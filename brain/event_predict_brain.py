@@ -124,6 +124,8 @@ class EventPredictBrain(object):
         self.plot_num = 0
 
         self.prediction_error = np.zeros(10000000)
+        self.mean_prediction_error = np.zeros_like(self.prediction_error)
+        self.tau_mean_error = 10000
         self.error_t = 0
 
         # self.fig_bar = plt.figure(figsize=(40, 40))
@@ -209,9 +211,15 @@ class EventPredictBrain(object):
 
             self.ax_bar_horiz.cla()
             self.ax_bar_horiz.plot(self.prediction_error[0:self.error_t+1])
-            mean_err = np.mean(self.prediction_error[0:self.error_t+1])
-            self.ax_bar_horiz.axhline(y=mean_err, color='r')
-            self.fig_bar_horiz.savefig(self.plots_folder + "/predict_error_" + str(self.plot_num) + ".png", dpi=100)
+            #mean_err = np.mean(self.prediction_error[0:self.error_t+1])
+
+            #for k in range(1, 10):
+            #    self.ax_bar_horiz.axhline(y=k, color='g')
+
+            self.ax_bar_horiz.plot(self.mean_prediction_error[0:self.error_t+1], color='r')
+
+            #self.fig_bar_horiz.savefig(self.plots_folder + "/predict_error_" + str(self.plot_num) + ".png", dpi=100)
+            self.fig_bar_horiz.savefig(self.plots_folder + "/predict_error" + ".png", dpi=100)
 
             self.plot_num += 1
 
@@ -302,9 +310,12 @@ class EventPredictBrain(object):
 
                 # plot error over time
                 actual_times, predicted_times = self._get_last_actual_and_predicted_times()
-                error = np.mean(np.abs(actual_times - predicted_times))
+                error = np.mean(np.divide(np.abs(actual_times - predicted_times), (actual_times+1)))
                 self.prediction_error[self.error_t] = error
                 self.error_t += 1
+
+                min_index = max(0, self.error_t-self.tau_mean_error)
+                self.mean_prediction_error[self.error_t] = np.mean(self.prediction_error[min_index:self.error_t+1])
 
                 # TODO also need to evaluate and plot hidden layer values over time
 
