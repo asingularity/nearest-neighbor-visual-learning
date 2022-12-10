@@ -104,6 +104,15 @@ class EventPredictBrain(object):
 
         # **************** plots ****************
 
+
+        # intermediate values history
+        # random set of indices to store
+        self.interm_to_store = np.random.permutation(self.hidden_state_dim)[0:20]
+        self.interm_history = np.zeros((self.max_time, 20))
+        self.interm_t = 0
+
+        print('interm to store', self.interm_to_store)
+
         self.raster_steps = 200
         self.raster_t = 0  # circular; draw vertical line on plot here
         self.input_raster_history = np.zeros((self.input_state_dim, self.raster_steps), np.uint8)
@@ -123,7 +132,7 @@ class EventPredictBrain(object):
 
         self.plot_num = 0
 
-        self.prediction_error = np.zeros(10000000)
+        self.prediction_error = np.zeros(self.max_time)
         self.mean_prediction_error = np.zeros_like(self.prediction_error)
         self.tau_mean_error = 10000
         self.error_t = 0
@@ -221,6 +230,14 @@ class EventPredictBrain(object):
             #self.fig_bar_horiz.savefig(self.plots_folder + "/predict_error_" + str(self.plot_num) + ".png", dpi=100)
             self.fig_bar_horiz.savefig(self.plots_folder + "/predict_error" + ".png", dpi=100)
 
+            self.ax_bar_horiz.cla()
+            self.ax_bar_horiz.plot(self.interm_history[0:self.interm_t, :])
+            self.fig_bar_horiz.savefig(self.plots_folder + "/all_interm" + ".png", dpi=100)
+
+            self.ax_bar_horiz.cla()
+            self.ax_bar_horiz.plot(self.interm_history[max(0, self.interm_t-1000):self.interm_t, :])
+            self.fig_bar_horiz.savefig(self.plots_folder + "/recent_interm" + ".png", dpi=100)
+
             self.plot_num += 1
 
         # THIS IS NORMAL INPUT RASTER
@@ -299,7 +316,28 @@ class EventPredictBrain(object):
 
             # (4) step MLP (if trained already)
             if self.net_trained_once:
-                output_values = self.net.predict(X=mlp_input[np.newaxis, :]).flatten()
+                output_values, interm_output = self.net.predict(X=mlp_input[np.newaxis, :])
+
+                output_values = output_values.flatten()
+                interm_output = interm_output.flatten()
+
+                store_interm_debug_values = True
+                if store_interm_debug_values:
+                    # print('interm_output', interm_output.shape)
+                    # print()
+                    # print(np.count_nonzero(interm_output))
+                    # print()
+                    # print(np.nonzero(interm_output))
+                    # print()
+                    # print(interm_output[np.nonzero(interm_output)])
+                    # print()
+                    # print(interm_output[self.interm_to_store])
+                    # print()
+                    # print('*********************************')
+                    # print()
+
+                    self.interm_history[self.interm_t, :] = interm_output[self.interm_to_store]
+                    self.interm_t += 1
 
                 output_values[output_values<=0] = 1e-12
                 output_values[output_values>1] = 1
@@ -316,8 +354,6 @@ class EventPredictBrain(object):
 
                 min_index = max(0, self.error_t-self.tau_mean_error)
                 self.mean_prediction_error[self.error_t] = np.mean(self.prediction_error[min_index:self.error_t+1])
-
-                # TODO also need to evaluate and plot hidden layer values over time
 
             # (5) update context states history (from step, or zero values otherwise)
             # self.context_history.store_new_states(newest_states_list=[context_state])
