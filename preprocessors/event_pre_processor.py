@@ -2,6 +2,7 @@
 import numpy as np
 
 
+
 class EventPreProcessor(object):
     '''
         This class generates events from frame-based images
@@ -54,4 +55,37 @@ class EventPreProcessor(object):
         return events_arr_p, events_arr_n, self.event_coords_r.copy(), self.event_coords_c.copy(), original_input_image
 
 
+class SimpleEventPreProcessor(object):
+    '''
+    like EventPreProcessor but without 2D / image assumption
+    just takes a flat array of values and makes events, over time
+    '''
+
+    def __init__(self, params):
+        self.value_threshold = params['value_threshold']
+        self.t = 0
+        self.last_values = None
+
+    def step(self, input_arr):
+        if self.t == 0:
+            self.last_values = input_arr.copy()
+
+
+        # TODO WE ARE HERE
+
+        nnz_events_p = np.nonzero((input_state - self.last_event_brightness) > self.brightness_threshold)
+        nnz_events_n = np.nonzero((input_state - self.last_event_brightness) < -self.brightness_threshold)
+
+        self.last_event_brightness[nnz_events_p] = input_state[nnz_events_p]
+        self.last_event_brightness[nnz_events_n] = input_state[nnz_events_n]
+
+        events_arr_p = np.zeros(input_state.shape[0], np.float32)
+        events_arr_n = np.zeros(input_state.shape[0], np.float32)
+
+        events_arr_p[nnz_events_p] = 1
+        events_arr_n[nnz_events_n] = 1
+
+        self.t += 1
+
+        return events_arr_p, events_arr_n
 
