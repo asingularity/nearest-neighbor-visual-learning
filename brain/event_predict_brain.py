@@ -4,7 +4,7 @@ import time
 import cv2
 #from sklearn.neural_network import MLPRegressor
 from brain.tf_mlp import TFRegressor as MLPRegressor
-
+from preprocessors.event_pre_processor import SimpleEventPreProcessor
 
 import numpy as np
 np.set_printoptions(suppress=True, precision=2)
@@ -102,6 +102,10 @@ class EventPredictBrain(object):
         self.last_train_t = -np.inf
         self.net_trained_once = False
 
+        # create events from intermediate layer:
+        self.interm_events_proc = SimpleEventPreProcessor(params={'value_threshold': 0.05,
+                                                                  'dim': self.hidden_state_dim})
+
         # **************** plots ****************
 
 
@@ -116,6 +120,9 @@ class EventPredictBrain(object):
         self.raster_steps = 200
         self.raster_t = 0  # circular; draw vertical line on plot here
         self.input_raster_history = np.zeros((self.input_state_dim, self.raster_steps), np.uint8)
+        # *2? n and p events
+        self.interm_events_raster_history = np.zeros((self.hidden_state_dim * 2, self.raster_steps), np.uint8)
+
         self.rfs_raster_history = np.zeros((self.num_rfs, self.raster_steps), np.uint8)
 
         self.fig_bar = plt.figure(figsize=(20, 40))
@@ -241,13 +248,21 @@ class EventPredictBrain(object):
             self.plot_num += 1
 
         # THIS IS NORMAL INPUT RASTER
-        # self.ax_bar.cla()
-        # num_rf = self.input_raster_history.shape[0]
-        # raster_plot = np.transpose(np.multiply(self.input_raster_history[0:num_rf, :],
-        #                                        np.arange(num_rf)[:, np.newaxis]))
-        # t = np.arange(raster_plot.shape[0])
-        # self.ax_bar.plot(t, raster_plot, color='b', marker='.', linestyle='')
-        # self.fig_bar.savefig(self.plots_folder + "/raster_input.png", dpi=100)
+        self.ax_bar_horiz.cla()
+        num_rf = self.input_raster_history.shape[0]
+        raster_plot = np.transpose(np.multiply(self.input_raster_history[0:num_rf, :],
+                                                np.arange(num_rf)[:, np.newaxis]))
+        t = np.arange(raster_plot.shape[0])
+        self.ax_bar_horiz.plot(t, raster_plot, color='b', marker='.', linestyle='')
+        self.fig_bar_horiz.savefig(self.plots_folder + "/raster_input.png", dpi=100)
+
+        self.ax_bar_horiz.cla()
+        num_rf = self.interm_events_raster_history.shape[0]
+        raster_plot = np.transpose(np.multiply(self.interm_events_raster_history[0:num_rf, :],
+                                                np.arange(num_rf)[:, np.newaxis]))
+        t = np.arange(raster_plot.shape[0])
+        self.ax_bar_horiz.plot(t, raster_plot, color='b', marker='.', linestyle='')
+        self.fig_bar_horiz.savefig(self.plots_folder + "/raster_interm.png", dpi=100)
 
         # THIS IS RF RASTER OLD?
         # self.ax_2.cla()
@@ -320,6 +335,10 @@ class EventPredictBrain(object):
 
                 output_values = output_values.flatten()
                 interm_output = interm_output.flatten()
+
+                # TODO speed this up maybe via cython; it is slow!
+                events_arr_p, events_arr_n = self.interm_events_proc.step(input_arr=interm_output)
+                self.interm_events_raster_history[:, self.raster_t] = np.concatenate((events_arr_p, events_arr_n))[:]
 
                 store_interm_debug_values = True
                 if store_interm_debug_values:
