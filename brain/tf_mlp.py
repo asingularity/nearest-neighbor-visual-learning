@@ -12,7 +12,7 @@ print()
 
 
 class TFRegressor(object):
-    def __init__(self, hidden_layer_sizes, random_state, max_iter, output_layer_size):
+    def __init__(self, input_layer_size, hidden_layer_sizes, random_state, max_iter, output_layer_size):
 
         # self.net = MLPRegressor(hidden_layer_sizes=(self.hidden_state_dim,), random_state=1, max_iter=500)
         # output_values = self.net.predict(X=mlp_input[np.newaxis, :])
@@ -21,7 +21,7 @@ class TFRegressor(object):
 
         self.model = tf.keras.models.Sequential([
             #tf.keras.layers.Flatten(input_shape=(hidden_layer_sizes[0])),
-            tf.keras.layers.Flatten(input_shape=[output_layer_size]),
+            tf.keras.layers.Flatten(input_shape=[input_layer_size]),
             tf.keras.layers.Dense(hidden_layer_sizes[0], activation='relu'),
             tf.keras.layers.Dense(output_layer_size)  #,
             #tf.keras.layers.Dropout(0.2),

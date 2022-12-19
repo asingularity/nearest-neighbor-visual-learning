@@ -40,6 +40,8 @@ class EventPredictBrain(object):
         self.do_plots_every_k_sec = params['do_plots_every_k_sec']
         self.last_plot_time = time.time()
 
+        self.use_context = True
+
         self.t = 0
 
         # **************** input ****************
@@ -66,6 +68,7 @@ class EventPredictBrain(object):
 
         # TODO dim expansion of *10 is too large here!
         self.hidden_state_dim = self.input_state_dim * 10  # size of MLP hidden layer
+        self.context_state_dim = 2 * self.hidden_state_dim  # +/- event changes so double
 
         # why 2 * max_predict_time? this is the length of data you need for one training point: need max_predict_time behind, and max_predict_time_ahead
         #   why + num_training_points? this is how many training points you will actually have
@@ -90,21 +93,34 @@ class EventPredictBrain(object):
                                                                     'states_dim_list': [self.input_state_dim],
                                                                     'store_extra_data': False})
 
-        # self.context_history = BinaryEventsHistory(params={'max_delay': 2 * self.max_predict_time + self.num_training_points_per_batch,
-        #                                                    'states_dim': self.hidden_state_dim})
+        # intermediate events (2x hidden dim) as context
+        self.context_prox = ProximalEventsHistory(params={'max_delay': 2 * self.max_predict_time + 1,  # always taking the middle for one training point!
+                                                          'states_dim': self.context_state_dim})
+
+        self.context_prox_left_history = StatesLimitedHistory(params={'max_delay': self.num_training_points_per_batch,
+                                                                      'states_dim_list': [self.context_state_dim],
+                                                                      'store_extra_data': False})
 
         # for storing self output as context
 
         # input size to net: input_state_dim + context_state_dim
         # !!! this is no longer compatible with sklearn MLPRegressor! due to output_layer_size
-        self.net = MLPRegressor(hidden_layer_sizes=(self.hidden_state_dim,), random_state=1, max_iter=500, output_layer_size=self.input_state_dim)
+        self.total_net_input_size = self.input_state_dim
+        if self.use_context:
+            self.total_net_input_size = self.total_net_input_size + self.context_state_dim
+
+        self.net = MLPRegressor(input_layer_size=self.total_net_input_size,
+                                hidden_layer_sizes=(self.hidden_state_dim,),
+                                random_state=1,
+                                max_iter=500,
+                                output_layer_size=self.input_state_dim)
 
         self.last_train_t = -np.inf
         self.net_trained_once = False
 
         # create events from intermediate layer:
         self.interm_events_proc = SimpleEventPreProcessor(params={'value_threshold': 0.05,
-                                                                  'dim': self.hidden_state_dim})
+                                                                  'dim': self.hidden_state_dim})  # this is the input values dim. the output events dim is 2x this.
 
         # **************** plots ****************
 
@@ -324,10 +340,10 @@ class EventPredictBrain(object):
             input_values = np.exp(-prox_left_now * self.exp_decay)
             mlp_input = input_values.copy()
 
-            # (3) get context times, transform to values
-            # last_context_times = self.context_history.get_last_event_times_before(delay=0)
-            # context_values = np.exp(-last_input_times * 0.06)
-            # mlp_input = np.concatenate((mlp_input, context_values))
+            if self.use_context:
+                ctx_prox_left_now = self.context_prox.get_prox_left_now()
+                ctx_values = np.exp(-ctx_prox_left_now * self.exp_decay)
+                mlp_input = np.concatenate((mlp_input, ctx_values))
 
             # (4) step MLP (if trained already)
             if self.net_trained_once:
@@ -337,7 +353,13 @@ class EventPredictBrain(object):
                 interm_output = interm_output.flatten()
 
                 events_arr_p, events_arr_n = self.interm_events_proc.step(input_arr=interm_output)
-                self.interm_events_raster_history[:, self.raster_t] = np.concatenate((events_arr_p, events_arr_n))[:]
+                context_states = np.concatenate((events_arr_p, events_arr_n))
+                self.interm_events_raster_history[:, self.raster_t] = context_states[:]
+
+                # update context states history (from step, or zero values otherwise)
+                self.context_prox.store_new_states(binary_states_arr=context_states)
+                ctx_prox_right_arr, ctx_prox_left_arr = self.context_prox.get_right_left_from_middle()
+                self.context_prox_left_history.store_new_states(newest_states_list=[ctx_prox_left_arr])
 
                 store_interm_debug_values = True
                 if store_interm_debug_values:
@@ -373,9 +395,6 @@ class EventPredictBrain(object):
                 min_index = max(0, self.error_t-self.tau_mean_error)
                 self.mean_prediction_error[self.error_t] = np.mean(self.prediction_error[min_index:self.error_t+1])
 
-            # (5) update context states history (from step, or zero values otherwise)
-            # self.context_history.store_new_states(newest_states_list=[context_state])
-
             # *************** train network ***************
 
             if self.t > self.last_train_t + self.retrain_every_k_steps and self.t > self.num_training_points_per_batch + 2 * self.max_predict_time + 1:
@@ -386,8 +405,12 @@ class EventPredictBrain(object):
                 train_input_values = np.exp(-train_prox_left * self.exp_decay)
                 mlp_input_train = train_input_values
 
-                # (2) get context input history for batch
-                # mlp_input_train.append(...)
+                if self.use_context:
+                    # (2) get context input history for batch
+                    # mlp_input_train.append(...)
+                    train_ctx_prox_left = self.context_prox_left_history.get_state_array_history()
+                    train_ctx_values = np.exp(-train_ctx_prox_left * self.exp_decay)
+                    mlp_input_train = np.hstack((mlp_input_train, train_ctx_values))
 
                 # (3) get output history for batch
 
@@ -404,7 +427,7 @@ class EventPredictBrain(object):
                 print()
                 print('train_prox_left', train_prox_left.shape)
                 print('train_prox_right', train_prox_right.shape)
-                print('mlp_input_train', mlp_input_train.shape)
+                print('mlp_input_train', mlp_input_train.shape)  # 20001 * 512
                 print('mlp_output_train', mlp_output_train.shape)
                 print()
 
