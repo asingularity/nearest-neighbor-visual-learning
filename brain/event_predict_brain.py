@@ -336,7 +336,6 @@ class EventPredictBrain(object):
                 output_values = output_values.flatten()
                 interm_output = interm_output.flatten()
 
-                # TODO speed this up maybe via cython; it is slow!
                 events_arr_p, events_arr_n = self.interm_events_proc.step(input_arr=interm_output)
                 self.interm_events_raster_history[:, self.raster_t] = np.concatenate((events_arr_p, events_arr_n))[:]
 
