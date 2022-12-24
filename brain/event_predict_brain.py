@@ -40,7 +40,9 @@ class EventPredictBrain(object):
         self.do_plots_every_k_sec = params['do_plots_every_k_sec']
         self.last_plot_time = time.time()
 
-        self.use_context = True
+        # params specific to this model
+        self.use_context = params['use_context']
+        self.hidden_state_factor = params['hidden_state_factor']
 
         self.t = 0
 
@@ -66,8 +68,7 @@ class EventPredictBrain(object):
         self.num_training_points_per_batch = 20000  # 10K how many points for training one batch?
         self.retrain_every_k_steps = 20000  # 5K how often to retrain network i.e. to train based on a new batch. half of num training points: half overlap to last batch
 
-        # TODO dim expansion of *10 is too large here!
-        self.hidden_state_dim = self.input_state_dim * 10  # size of MLP hidden layer
+        self.hidden_state_dim = self.input_state_dim * self.hidden_state_factor  # size of MLP hidden layer
         self.context_state_dim = 2 * self.hidden_state_dim  # +/- event changes so double
 
         # why 2 * max_predict_time? this is the length of data you need for one training point: need max_predict_time behind, and max_predict_time_ahead

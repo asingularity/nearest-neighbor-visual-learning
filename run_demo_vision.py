@@ -26,18 +26,11 @@ from sensors.video_playback import VideoPlaybackSensor
 from preprocessors.event_pre_processor import EventPreProcessor
 
 
-DISABLE_BRAIN = False  # for testing input by itself; also starts slow display
-RF_IM_DIM = 16  # 8, 16, 32, 64, 128
-
-# ROOT_DIR = '/srv'
-ROOT_DIR = '/home/csaba'
-
-
-def get_sensors_params():
+def get_sensors_params(main_params):
 
     # 'video_filename': 'seattle-driving-fkps18H3SXY.mp4',
 
-    square_crop = (128 - int(RF_IM_DIM / 2), 128 - int(RF_IM_DIM / 2), RF_IM_DIM)
+    square_crop = (128 - int(main_params['RF_IM_DIM'] / 2), 128 - int(main_params['RF_IM_DIM'] / 2), main_params['RF_IM_DIM'])
 
     params_video_playback = {
         'pickle_im_square_crop': None,
@@ -47,7 +40,7 @@ def get_sensors_params():
         'returned_im_square_crop': square_crop,
         'returned_im_dtype': np.float32,  # only np.float32 supported
         'returned_im_use_color': False,  # only False supported for now
-        'video_dir': ROOT_DIR + '/projects/video-downloads',
+        'video_dir': main_params['ROOT_DIR'] + '/projects/video-downloads',
         #'video_filename': 'sea-turtles-yLuEx-XH3Uc.mp4'  # not on laptop
         #'video_filename': 'seattle-driving-fkps18H3SXY.mp4'
         'video_filename': 'sea-turtles-11hr-spxtEt6RaS4.mp4'
@@ -56,15 +49,15 @@ def get_sensors_params():
     return params_video_playback
 
 
-def get_pre_proc_params():
+def get_pre_proc_params(main_params):
     params_pre_proc = {
         'brightness_threshold': 2.0 / 255,
-        'im_dim': RF_IM_DIM
+        'im_dim': main_params['RF_IM_DIM']
     }
     return params_pre_proc
 
 
-def get_sim_folder_manager_params():
+def get_sim_folder_manager_params(main_params):
 
     print()
     sim_prefix = input('sim prefix? >> ')
@@ -78,26 +71,28 @@ def get_sim_folder_manager_params():
 
     params = {
         'sim_prefix': sim_prefix,
-        'sim_folders_path': ROOT_DIR + '/projects/NL-sim-venv/',
-        'scripts_folder_path': ROOT_DIR + '/projects/NL/'
+        'sim_folders_path': main_params['ROOT_DIR'] + '/projects/NL-sim-venv/',
+        'scripts_folder_path': main_params['ROOT_DIR'] + '/projects/NL/'
     }
     return params
 
 
-def get_brain_params():
+def get_brain_params(main_params):
 
     brain_params = {
-        'input_im_dim': RF_IM_DIM,
+        'input_im_dim': main_params['RF_IM_DIM'],
         'num_rfs': 64,  # 64
         'lr': 1.0 / 100,  # 1000
-        'max_time': 5000000,
+        'max_time': main_params['MAX_TIME'],
         'do_plots_every_k_sec': 10,  # 5 or None
+        'use_context': True,
+        'hidden_state_factor': 10
     }
 
     return brain_params
 
 
-def get_visualizer_params():
+def get_visualizer_params(main_params):
     params = {
         'color_enabled': False,
         'fps_display_interval': 6,
@@ -112,23 +107,23 @@ def get_visualizer_params():
     return params
 
 
-def init_demo():
+def init_demo(main_params):
     return {
-        'robot_brain': EventPredictBrain(get_brain_params()),
-        'robot_sensors': VideoPlaybackSensor(get_sensors_params()),
-        'visualizer': BasicVisualizer(get_visualizer_params()),
-        'sim_folder_manager': SimFolderManager(get_sim_folder_manager_params())
+        'robot_brain': EventPredictBrain(get_brain_params(main_params=main_params)),
+        'robot_sensors': VideoPlaybackSensor(get_sensors_params(main_params=main_params)),
+        'visualizer': BasicVisualizer(get_visualizer_params(main_params=main_params)),
+        'sim_folder_manager': SimFolderManager(get_sim_folder_manager_params(main_params=main_params)),
+        'pre_processor': EventPreProcessor(get_pre_proc_params(main_params=main_params))
     }
 
 
-def run_demo(demo_components):
+def run_demo(demo_components, main_params):
 
     robot_brain = demo_components['robot_brain']
     robot_sensors = demo_components['robot_sensors']
     visualizer = demo_components['visualizer']
     sim_folder_manager = demo_components['sim_folder_manager']
-
-    pre_proc = EventPreProcessor(get_pre_proc_params())
+    pre_proc = demo_components['pre_processor']
 
     robot_brain.set_plots_folder(sim_folder_manager.get_plots_save_folder())
 
@@ -143,14 +138,14 @@ def run_demo(demo_components):
 
         events_p, events_n, event_coords_r, event_coords_c, original_input_image = pre_proc.step(input_frame=im)
 
-        if not DISABLE_BRAIN:
+        if not main_params['DISABLE_BRAIN']:
             robot_brain.process_input(input_events_p=events_p, input_events_n=events_n,
                                       event_coords_r=event_coords_r, event_coords_c=event_coords_c,
                                       original_input_image=original_input_image)
 
         visualizer.visualize(input_im=im,
                              segment_brain=robot_brain,
-                             disable_brain=DISABLE_BRAIN)  # So it can call .get_table_ims() only sometimes
+                             disable_brain=main_params['DISABLE_BRAIN'])  # So it can call .get_table_ims() only sometimes
 
     robot_brain.save_model(models_save_folder=sim_folder_manager.get_models_save_folder())
 
@@ -161,8 +156,26 @@ def run_demo(demo_components):
 
 
 def demo():
-    demo_components = init_demo()
-    run_demo(demo_components)
+    '''
+    MAX_TIME = 5000000
+    DISABLE_BRAIN = False  # for testing input by itself; also starts slow display
+    RF_IM_DIM = 16  # 8, 16, 32, 64, 128
+
+    # ROOT_DIR = '/srv'
+    ROOT_DIR = '/home/csaba'
+
+    :return:
+    '''
+
+    main_params = {
+        'MAX_TIME': 5000000,
+        'DISABLE_BRAIN': False,
+        'RF_IM_DIM': 16,
+        'ROOT_DIR': '/home/csaba'
+    }
+
+    demo_components = init_demo(main_params=main_params)
+    run_demo(demo_components, main_params)
 
 
 
