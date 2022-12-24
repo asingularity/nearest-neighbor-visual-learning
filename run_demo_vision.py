@@ -58,10 +58,7 @@ def get_pre_proc_params(main_params):
 
 
 def get_sim_folder_manager_params(main_params):
-
-    print()
-    sim_prefix = input('sim prefix? >> ')
-    print()
+    sim_prefix = main_params['SIM_PREFIX']
 
     if sim_prefix[-1] != '_':
         sim_prefix += '_'
@@ -176,12 +173,16 @@ def demo():
 
     :return:
     '''
+    print()
+    sim_prefix = input('sim prefix? >> ')
+    print()
 
     main_params = {
         'MAX_TIME': 5000000,
         'DISABLE_BRAIN': False,
         'RF_IM_DIM': 16,
-        'ROOT_DIR': '/home/csaba'
+        'ROOT_DIR': '/home/csaba',
+        'SIM_PREFIX': sim_prefix
     }
 
     components_params = get_components_params(main_params=main_params)
