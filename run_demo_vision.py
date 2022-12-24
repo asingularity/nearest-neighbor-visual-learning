@@ -107,13 +107,23 @@ def get_visualizer_params(main_params):
     return params
 
 
-def init_demo(main_params):
+def get_components_params(main_params):
     return {
-        'robot_brain': EventPredictBrain(get_brain_params(main_params=main_params)),
-        'robot_sensors': VideoPlaybackSensor(get_sensors_params(main_params=main_params)),
-        'visualizer': BasicVisualizer(get_visualizer_params(main_params=main_params)),
-        'sim_folder_manager': SimFolderManager(get_sim_folder_manager_params(main_params=main_params)),
-        'pre_processor': EventPreProcessor(get_pre_proc_params(main_params=main_params))
+        'robot_brain': get_brain_params(main_params=main_params),
+        'robot_sensors': get_sensors_params(main_params=main_params),
+        'visualizer': get_visualizer_params(main_params=main_params),
+        'sim_folder_manager': get_sim_folder_manager_params(main_params=main_params),
+        'pre_processor': get_pre_proc_params(main_params=main_params)
+    }
+
+
+def init_components(components_params, main_params):
+    return {
+        'robot_brain': EventPredictBrain(components_params['robot_brain']),
+        'robot_sensors': VideoPlaybackSensor(components_params['robot_sensors']),
+        'visualizer': BasicVisualizer(components_params['visualizer']),
+        'sim_folder_manager': SimFolderManager(components_params['sim_folder_manager']),
+        'pre_processor': EventPreProcessor(components_params['pre_processor'])
     }
 
 
@@ -174,7 +184,8 @@ def demo():
         'ROOT_DIR': '/home/csaba'
     }
 
-    demo_components = init_demo(main_params=main_params)
+    components_params = get_components_params(main_params=main_params)
+    demo_components = init_components(components_params=components_params, main_params=main_params)
     run_demo(demo_components, main_params)
 
 
