@@ -22,6 +22,7 @@ import matplotlib
 matplotlib.use('Agg')
 matplotlib.rcParams['agg.path.chunksize'] = 10000
 import matplotlib.pyplot as plt
+
 from math import log
 
 np.set_printoptions(suppress=True, precision=2)
@@ -172,6 +173,7 @@ class EventPredictBrain(object):
         #     subpl.get_yaxis().get_major_formatter().set_scientific(False)
         #     self.ax_bar_list.append(subpl)
 
+
     def get_final_errors_dict(self):
         d = {}
         return d
@@ -223,6 +225,16 @@ class EventPredictBrain(object):
         predicted_times = np.ma.masked_where(predicted_times > self.max_predict_time, predicted_times)
 
         return actual_times, predicted_times
+
+    def get_results_dict(self):
+
+        # TODO truncate arrays if needed !!!
+
+        return {
+            'mean_prediction_error': self.mean_prediction_error[0:self.error_t + 1],
+            'mean_mean_prediction_error': np.mean(self.mean_prediction_error[0:self.error_t + 1]),
+            #'prediction_error': self.prediction_error[0:self.error_t+1]
+        }
 
     def do_plots(self):
         # look at dynamic_coincidence.py, others
