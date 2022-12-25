@@ -128,6 +128,7 @@ def run_demo(demo_components, main_params):
 
     robot_brain = demo_components['robot_brain']
     robot_sensors = demo_components['robot_sensors']
+
     visualizer = demo_components['visualizer']
     sim_folder_manager = demo_components['sim_folder_manager']
     pre_proc = demo_components['pre_processor']
@@ -136,7 +137,7 @@ def run_demo(demo_components, main_params):
 
     random.seed(1233)
 
-    while True:
+    for timestep in range(main_params['MAX_TIME']):
 
         # reference
         # a = np.dot(np.random.random((200, 200)), np.random.random((200, 200)))
@@ -149,17 +150,17 @@ def run_demo(demo_components, main_params):
             robot_brain.process_input(input_events_p=events_p, input_events_n=events_n,
                                       event_coords_r=event_coords_r, event_coords_c=event_coords_c,
                                       original_input_image=original_input_image)
+        if not main_params['DISABLE_VIZ']:
+            visualizer.visualize(input_im=im,
+                                 segment_brain=robot_brain,
+                                 disable_brain=main_params['DISABLE_BRAIN'])  # So it can call .get_table_ims() only sometimes
 
-        visualizer.visualize(input_im=im,
-                             segment_brain=robot_brain,
-                             disable_brain=main_params['DISABLE_BRAIN'])  # So it can call .get_table_ims() only sometimes
-
-    robot_brain.save_model(models_save_folder=sim_folder_manager.get_models_save_folder())
+    # robot_brain.save_model(models_save_folder=sim_folder_manager.get_models_save_folder())
 
     print ('Finished Evaluation.')
 
-    while True:
-        cv2.waitKey(1)
+    # while True:
+    #     cv2.waitKey(1)
 
 
 def demo():
@@ -182,7 +183,8 @@ def demo():
         'DISABLE_BRAIN': False,
         'RF_IM_DIM': 16,
         'ROOT_DIR': '/home/csaba',
-        'SIM_PREFIX': sim_prefix
+        'SIM_PREFIX': sim_prefix,
+        'DISABLE_VIZ': False
     }
 
     components_params = get_components_params(main_params=main_params)
