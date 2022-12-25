@@ -46,7 +46,9 @@ def post_process_results(sweep_results, sweep_folder, param_set):
         ax_2_x.append(param_value)
         ax_2_y.append(results_dict['mean_mean_prediction_error'])
 
-    ax_2.plot(ax_2_x, ax_2_y, 'b.-')
+    ax_1.legend()
+
+    ax_2.plot(ax_2_x, ax_2_y, 'bo')
 
     #ax_1.plot(actual_times, np.arange(actual_times.shape[0]), color='g', marker='o', linestyle='')
     fig.savefig(os.path.join(sweep_folder, str(param_set[0]) + '_' + str(param_set[1]) + ".png"), dpi=100)
@@ -76,7 +78,7 @@ def run_one_sweep(param_set, sweeps_prefix):
     root_dir = '/home/csaba'
 
     main_params = {
-        'MAX_TIME': 20000,  # 5000000
+        'MAX_TIME': 40000,  # 5000000
         'DISABLE_BRAIN': False,
         'RF_IM_DIM': 8,
         'ROOT_DIR': root_dir,
