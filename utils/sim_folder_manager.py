@@ -16,8 +16,12 @@ class SimFolderManager(object):
 
         # TODO fix this again (just copy whole repo) or just use git commit id
         file_list = []
-        for filename in file_list:
-            shutil.copy2(params['scripts_folder_path'] + '/' + filename, self.sim_folder_path)
+        files = os.listdir(params['scripts_folder_path'])
+
+        shutil.copytree(params['scripts_folder_path'], os.path.join(self.sim_folder_path, 'code'), ignore=shutil.ignore_patterns('venv'))
+
+        #for filename in file_list:
+        #    shutil.copy2(params['scripts_folder_path'] + '/' + filename, self.sim_folder_path)
 
     def get_models_save_folder(self):
         return self.models_save_folder

@@ -76,7 +76,7 @@ def run_one_sweep(param_set, sweeps_prefix):
     root_dir = '/home/csaba'
 
     main_params = {
-        'MAX_TIME': 1000,  # 5000000
+        'MAX_TIME': 20000,  # 5000000
         'DISABLE_BRAIN': False,
         'RF_IM_DIM': 16,
         'ROOT_DIR': root_dir,
@@ -99,7 +99,7 @@ def run_one_sweep(param_set, sweeps_prefix):
 
         # override sim folder manager params here!
         #          'sim_folders_path': main_params['ROOT_DIR'] + '/projects/NL-sim-venv/',
-        #         'scripts_folder_path': main_params['ROOT_DIR'] + '/projects/NL/'
+        #         'scripts_folder_path': main_params['ROOT_DIR'] + '/projects/nl_new/'
 
         components_params['sim_folder_manager']['sim_prefix'] = sim_prefix
         components_params['sim_folder_manager']['sim_folders_path'] = sweep_folder
@@ -126,8 +126,8 @@ def main():
     run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
 
     # hidden_state_factor: size of hidden layer dim relative to input state dim
-    param_set = ['robot_brain', 'hidden_state_factor', [1, 2, 5, 10, 20]]
-    run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
+    #param_set = ['robot_brain', 'hidden_state_factor', [1, 2, 5, 10, 20]]
+    #run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
 
 
 if __name__ == '__main__':

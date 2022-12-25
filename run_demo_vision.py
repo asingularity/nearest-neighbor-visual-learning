@@ -69,7 +69,7 @@ def get_sim_folder_manager_params(main_params):
     params = {
         'sim_prefix': sim_prefix,
         'sim_folders_path': main_params['ROOT_DIR'] + '/projects/NL-sim-venv/',
-        'scripts_folder_path': main_params['ROOT_DIR'] + '/projects/NL/'
+        'scripts_folder_path': main_params['ROOT_DIR'] + '/projects/nl_new/'
     }
     return params
 
@@ -78,12 +78,13 @@ def get_brain_params(main_params):
 
     brain_params = {
         'input_im_dim': main_params['RF_IM_DIM'],
-        'num_rfs': 64,  # 64
         'lr': 1.0 / 100,  # 1000
         'max_time': main_params['MAX_TIME'],
         'do_plots_every_k_sec': 10,  # 5 or None
         'use_context': True,
-        'hidden_state_factor': 10
+        'hidden_state_factor': 10,
+        'num_training_points_per_batch': 10000,
+        'retrain_every_k_steps': 5000
     }
 
     return brain_params
@@ -186,7 +187,7 @@ def demo():
     main_params = {
         'MAX_TIME': 5000000,
         'DISABLE_BRAIN': False,
-        'RF_IM_DIM': 16,
+        'RF_IM_DIM': 8,
         'ROOT_DIR': '/home/csaba',
         'SIM_PREFIX': sim_prefix,
         'DISABLE_VIZ': False

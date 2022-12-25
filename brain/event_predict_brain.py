@@ -34,7 +34,6 @@ np.random.seed(0)
 class EventPredictBrain(object):
     def __init__(self, params):
         self.input_im_dim = params['input_im_dim']
-        self.num_rfs = params['num_rfs']
         self.lr = params['lr']
         self.max_time = params['max_time']
 
@@ -66,8 +65,8 @@ class EventPredictBrain(object):
 
         self.max_predict_time = 100  # assume next event time > max_predict_time == infinite
         self.exp_decay = 0.06  # 0.06: roughly matches 100 max predict time (use temp.py to plot and set)
-        self.num_training_points_per_batch = 20000  # 10K how many points for training one batch?
-        self.retrain_every_k_steps = 20000  # 5K how often to retrain network i.e. to train based on a new batch. half of num training points: half overlap to last batch
+        self.num_training_points_per_batch = params['num_training_points_per_batch']  # 10K how many points for training one batch?
+        self.retrain_every_k_steps = params['retrain_every_k_steps']  # 5K how often to retrain network i.e. to train based on a new batch. half of num training points: half overlap to last batch
 
         self.hidden_state_dim = self.input_state_dim * self.hidden_state_factor  # size of MLP hidden layer
         self.context_state_dim = 2 * self.hidden_state_dim  # +/- event changes so double
@@ -140,8 +139,6 @@ class EventPredictBrain(object):
         self.input_raster_history = np.zeros((self.input_state_dim, self.raster_steps), np.uint8)
         # *2? n and p events
         self.interm_events_raster_history = np.zeros((self.hidden_state_dim * 2, self.raster_steps), np.uint8)
-
-        self.rfs_raster_history = np.zeros((self.num_rfs, self.raster_steps), np.uint8)
 
         self.fig_bar = plt.figure(figsize=(20, 40))
         self.ax_bar = self.fig_bar.add_subplot(1, 1, 1)
