@@ -49,7 +49,7 @@ def post_process_results(sweep_results, sweep_folder, param_set):
     ax_2.plot(ax_2_x, ax_2_y, 'b.-')
 
     #ax_1.plot(actual_times, np.arange(actual_times.shape[0]), color='g', marker='o', linestyle='')
-    fig.savefig(os.path.join(sweep_folder, str(param_set[0]) + '_' + str(param_set[1]), ".png"), dpi=100)
+    fig.savefig(os.path.join(sweep_folder, str(param_set[0]) + '_' + str(param_set[1]) + ".png"), dpi=100)
 
     # we are hard coding for now but later we can do something like thi:
     # for res_name in results_dict:
