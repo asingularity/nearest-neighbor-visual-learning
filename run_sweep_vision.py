@@ -78,7 +78,7 @@ def run_one_sweep(param_set, sweeps_prefix):
     root_dir = '/home/csaba'
 
     main_params = {
-        'MAX_TIME': 40000,  # 5000000
+        'MAX_TIME': 60000,  # 5000000
         'DISABLE_BRAIN': False,
         'RF_IM_DIM': 8,
         'ROOT_DIR': root_dir,

@@ -1,4 +1,8 @@
 import os
+import warnings
+#warnings.filterwarnings("ignore", category=UserWarning)
+import warnings
+warnings.filterwarnings("error", category=UserWarning, message='Warning: converting')
 
 import time
 import cv2
@@ -200,7 +204,7 @@ class EventPredictBrain(object):
         print('setting plots folder: ', self.plots_folder)
         print()
 
-    def _get_last_actual_and_predicted_times(self):
+    def _get_last_actual_and_predicted_times(self, do_mask=False):
         # gets delayed predicted times, and actual times, for plotting or error comparison
         # masked for infinite time
 
@@ -214,12 +218,14 @@ class EventPredictBrain(object):
         actual_times = self.input_prox_right_history.get_state(delay=0, state_index=0)
         # where do "1000" values here come from? it is "inf_val" in ProximalEventsHistory
         # actual_times[actual_times > self.max_predict_time] = self.max_predict_time  # infinite in future: peg to 100
-        actual_times = np.ma.masked_where(actual_times > self.max_predict_time, actual_times)
+        if do_mask:
+            actual_times = np.ma.masked_where(actual_times > self.max_predict_time, actual_times)
 
         predicted_times = self.predicted_prox_right_history.get_state(delay=self.max_predict_time, state_index=0)
         # why this is at 500 sometimes? this is 1e-12: basically no event. also set to max predict time for now
         # predicted_times[predicted_times > self.max_predict_time] = self.max_predict_time
-        predicted_times = np.ma.masked_where(predicted_times > self.max_predict_time, predicted_times)
+        if do_mask:
+            predicted_times = np.ma.masked_where(predicted_times > self.max_predict_time, predicted_times)
 
         return actual_times, predicted_times
 
@@ -237,7 +243,7 @@ class EventPredictBrain(object):
         # look at dynamic_coincidence.py, others
         if self.net_trained_once:
 
-            actual_times, predicted_times = self._get_last_actual_and_predicted_times()
+            actual_times, predicted_times = self._get_last_actual_and_predicted_times(do_mask=True)
 
             # make a "raster" of this prediction
             self.ax_bar.cla()
@@ -397,10 +403,21 @@ class EventPredictBrain(object):
                 self.predicted_prox_right_history.store_new_states(newest_states_list=[predicted_prox_right])
 
                 # plot error over time
-                actual_times, predicted_times = self._get_last_actual_and_predicted_times()
-                error = np.mean(np.divide(np.abs(actual_times - predicted_times), (actual_times+1)))
-                self.prediction_error[self.error_t] = error
-                self.error_t += 1
+                try:
+                    actual_times, predicted_times = self._get_last_actual_and_predicted_times()
+                    error = np.mean(np.divide(np.abs(actual_times - predicted_times), (actual_times+1)))
+                    self.prediction_error[self.error_t] = error
+                    self.error_t += 1
+                except UserWarning:
+                    print()
+                    print('there is an issue!')
+                    print('actual_times', actual_times)
+                    print('predicted_times', predicted_times)
+                    print('predicted_times', predicted_times)
+                    print('error', error)
+                    print()
+                    exit(1)
+
 
                 min_index = max(0, self.error_t-self.tau_mean_error)
                 self.mean_prediction_error[self.error_t] = np.mean(self.prediction_error[min_index:self.error_t+1])
