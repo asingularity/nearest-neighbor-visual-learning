@@ -72,7 +72,7 @@ class EventPredictBrain(object):
         self.num_training_points_per_batch = params['num_training_points_per_batch']  # 10K how many points for training one batch?
         self.retrain_every_k_steps = params['retrain_every_k_steps']  # 5K how often to retrain network i.e. to train based on a new batch. half of num training points: half overlap to last batch
 
-        self.hidden_state_dim = self.input_state_dim * self.hidden_state_factor  # size of MLP hidden layer
+        self.hidden_state_dim = int(self.input_state_dim * self.hidden_state_factor)  # size of MLP hidden layer
         self.context_state_dim = 2 * self.hidden_state_dim  # +/- event changes so double
 
         # why 2 * max_predict_time? this is the length of data you need for one training point: need max_predict_time behind, and max_predict_time_ahead
@@ -113,6 +113,13 @@ class EventPredictBrain(object):
         self.total_net_input_size = self.input_state_dim
         if self.use_context:
             self.total_net_input_size = self.total_net_input_size + self.context_state_dim
+
+        print()
+        print('Initializing network with parameters:')
+        print('    input_layer_size', self.total_net_input_size)
+        print('    hidden_layer_sizes', (self.hidden_state_dim,))
+        print('    output_layer_size', self.input_state_dim)
+        print()
 
         self.net = MLPRegressor(input_layer_size=self.total_net_input_size,
                                 hidden_layer_sizes=(self.hidden_state_dim,),

@@ -78,7 +78,7 @@ def run_one_sweep(param_set, sweeps_prefix):
     root_dir = '/home/csaba'
 
     main_params = {
-        'MAX_TIME': 120000,  # 5000000
+        'MAX_TIME': 180000,  # 5000000
         'DISABLE_BRAIN': False,
         'RF_IM_DIM': 8,
         'ROOT_DIR': root_dir,
@@ -124,11 +124,11 @@ def main():
     sweeps_prefix = sweeps_prefix + '_' + now
 
     # run a sweep
-    param_set = ['robot_brain', 'use_context', [True, False]]
-    run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
+    # param_set = ['robot_brain', 'use_context', [True, False]]
+    # run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
 
     # hidden_state_factor: size of hidden layer dim relative to input state dim
-    param_set = ['robot_brain', 'hidden_state_factor', [1, 2, 5, 10, 20]]
+    param_set = ['robot_brain', 'hidden_state_factor', [0.1, 0.5, 1, 5]]
     run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
 
 
