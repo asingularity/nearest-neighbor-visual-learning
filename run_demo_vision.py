@@ -83,7 +83,7 @@ def get_brain_params(main_params):
         'do_plots_every_k_sec': 10,  # 5 or None
         'use_context': True,
         'hidden_state_factor': 10,
-        'num_training_points_per_batch': 10000,
+        'num_training_points_per_batch': 40000,
         'retrain_every_k_steps': 5000
     }
 
