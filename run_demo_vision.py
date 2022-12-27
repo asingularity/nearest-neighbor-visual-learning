@@ -85,7 +85,7 @@ def get_brain_params(main_params):
         'use_context': False,
         'hidden_state_factor': 2,
         'num_training_points_per_batch': 200000,
-        'retrain_every_k_steps':  None  # None: train only once
+        'retrain_every_k_steps':  100000  # None: train only once
     }
 
     return brain_params
@@ -158,7 +158,7 @@ def run_demo(demo_components, main_params):
                                  segment_brain=robot_brain,
                                  disable_brain=main_params['DISABLE_BRAIN'])  # So it can call .get_table_ims() only sometimes
 
-        fps.update()
+        fps.update(display_more=str(timestep) + ' of ' + str(main_params['MAX_TIME']), display_more_same_line=True)
 
     # robot_brain.save_model(models_save_folder=sim_folder_manager.get_models_save_folder())
 
