@@ -139,8 +139,8 @@ class EventPredictBrain(object):
 
         # intermediate values history
         # random set of indices to store
-        self.interm_to_store = np.random.permutation(self.hidden_state_dim)[0:20]
-        self.interm_history = np.zeros((self.max_time, 20))
+        self.interm_to_store = np.random.permutation(self.hidden_state_dim)[0:5]
+        self.interm_history = np.zeros((self.max_time, 5))
         self.interm_t = 0
 
         print('interm to store', self.interm_to_store)
