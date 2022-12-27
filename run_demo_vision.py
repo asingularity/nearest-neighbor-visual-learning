@@ -24,6 +24,7 @@ from brain.event_predict_brain import EventPredictBrain
 from visualizers.basic_visualizer import BasicVisualizer
 from sensors.video_playback import VideoPlaybackSensor
 from preprocessors.event_pre_processor import EventPreProcessor
+from utils.fps_counter import FPSCounter
 
 
 def get_sensors_params(main_params):
@@ -82,7 +83,7 @@ def get_brain_params(main_params):
         'max_time': main_params['MAX_TIME'],
         'do_plots_every_k_sec': 10,  # 5 or None
         'use_context': False,
-        'hidden_state_factor': 1,
+        'hidden_state_factor': 2,
         'num_training_points_per_batch': 200000,
         'retrain_every_k_steps':  None  # None: train only once
     }
@@ -137,6 +138,7 @@ def run_demo(demo_components, main_params):
     robot_brain.set_plots_folder(sim_folder_manager.get_plots_save_folder())
 
     random.seed(1233)
+    fps = FPSCounter(params={'display_every_k_seconds': 3})
 
     for timestep in range(main_params['MAX_TIME']):
 
@@ -155,6 +157,8 @@ def run_demo(demo_components, main_params):
             visualizer.visualize(input_im=im,
                                  segment_brain=robot_brain,
                                  disable_brain=main_params['DISABLE_BRAIN'])  # So it can call .get_table_ims() only sometimes
+
+        fps.update()
 
     # robot_brain.save_model(models_save_folder=sim_folder_manager.get_models_save_folder())
 

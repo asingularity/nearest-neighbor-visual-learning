@@ -109,7 +109,7 @@ class BasicVisualizer(object):
         :return:
         '''
 
-        self._display_fps()
+        #self._display_fps()
 
         if (not self.disable_graphics) and (self.image_display_secs is not None):
 
