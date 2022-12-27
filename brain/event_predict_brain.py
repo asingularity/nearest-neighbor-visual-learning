@@ -431,7 +431,12 @@ class EventPredictBrain(object):
 
             # *************** train network ***************
 
-            if self.t > self.last_train_t + self.retrain_every_k_steps and self.t > self.num_training_points_per_batch + 2 * self.max_predict_time + 1:
+            if self.retrain_every_k_steps is None:
+                retrain_every_k_steps = 0
+            else:
+                retrain_every_k_steps = self.retrain_every_k_steps
+
+            if ((self.retrain_every_k_steps is not None and self.t > self.last_train_t + retrain_every_k_steps) or (self.retrain_every_k_steps is None and not self.net_trained_once)) and self.t > self.num_training_points_per_batch + 2 * self.max_predict_time + 1:
 
                 # (1) get forward input history for batch
 
@@ -455,7 +460,9 @@ class EventPredictBrain(object):
                 # (4) do training for batch
 
                 # X: (n_samples, n_features), Y:  (n_samples, n_outputs)
-                print('starting:    self.net.fit(X=mlp_input_train, y=mlp_output_train)    ...')
+                
+                print('TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT')
+                print('starting TRAINING:    self.net.fit(X=mlp_input_train, y=mlp_output_train)    ...')
                 print()
 
                 print()

@@ -82,9 +82,9 @@ def get_brain_params(main_params):
         'max_time': main_params['MAX_TIME'],
         'do_plots_every_k_sec': 10,  # 5 or None
         'use_context': False,
-        'hidden_state_factor': 10,
-        'num_training_points_per_batch': 60000,
-        'retrain_every_k_steps': 30000
+        'hidden_state_factor': 1,
+        'num_training_points_per_batch': 200000,
+        'retrain_every_k_steps':  None  # None: train only once
     }
 
     return brain_params

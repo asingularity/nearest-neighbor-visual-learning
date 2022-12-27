@@ -124,12 +124,12 @@ def main():
     sweeps_prefix = sweeps_prefix + '_' + now
 
     # run a sweep
-    # param_set = ['robot_brain', 'use_context', [True, False]]
-    # run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
+    param_set = ['robot_brain', 'use_context', [True, False]]
+    run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
 
     # hidden_state_factor: size of hidden layer dim relative to input state dim
-    param_set = ['robot_brain', 'hidden_state_factor', [0.1, 0.5, 1, 5]]
-    run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
+    #param_set = ['robot_brain', 'hidden_state_factor', [0.1, 0.5, 1, 5]]
+    #run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
 
 
 if __name__ == '__main__':
