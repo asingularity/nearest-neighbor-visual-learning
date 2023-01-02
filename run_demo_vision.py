@@ -163,9 +163,6 @@ def run_demo(demo_components, main_params):
 
     # robot_brain.save_model(models_save_folder=sim_folder_manager.get_models_save_folder())
 
-    # do a last plot
-    robot_brain.do_plots()
-
     print('Finished Evaluation.')
 
     return robot_brain.get_results_dict()
