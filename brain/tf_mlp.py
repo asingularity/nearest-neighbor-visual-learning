@@ -1,8 +1,10 @@
 
 import tensorflow as tf
 
-# helps slow predict on small batch?
-tf.compat.v1.disable_eager_execution()
+# helps slow predict on small batch
+# but THIS SILENTLY DISABLES self.optimizer.apply_gradients!!!
+# https://stackoverflow.com/questions/59332812/keras-optimizers-adam-apply-gradients-fails
+#tf.compat.v1.disable_eager_execution()
 
 
 num_gpu = len(tf.config.list_physical_devices('GPU'))
@@ -71,7 +73,7 @@ class TFRegressor(object):
     def predict(self, X):
 
         #output_values = self.model.predict(X, verbose=2)
-        final_output, intermediate_layer_output = self.aux_model.predict(X, verbose=2)
+        final_output, intermediate_layer_output = self.aux_model.predict(X, verbose=0)  # 2
 
         return final_output, intermediate_layer_output
 
