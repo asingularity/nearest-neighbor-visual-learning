@@ -55,6 +55,7 @@ class TFRegressor(object):
         return grads, loss_value
 
     def fit_one_step(self, inputs, labels):
+        # TODO tf_fit seems to be source of memory leak!
         grads, loss_value = self._tf_fit(inputs=inputs, labels=labels, model=self.model)
 
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
