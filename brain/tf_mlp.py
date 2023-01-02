@@ -44,12 +44,18 @@ class TFRegressor(object):
         # https://stackoverflow.com/questions/59504884/how-tensorflow2-gets-intermediate-layer-output
         # https://stackoverflow.com/questions/63297838/how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
 
+    @tf.function
+    def _tf_fit(self, inputs, labels, model):
+        with tf.GradientTape() as tape:
+            predictions = model(inputs, training=True)
+            loss_value = self.loss_fn(labels, predictions)
+
+        grads = tape.gradient(loss_value, model.trainable_variables)
+
+        return grads, loss_value
 
     def fit_one_step(self, inputs, labels):
-        with tf.GradientTape() as tape:
-            predictions = self.model(inputs, training=True)
-            loss_value = self.loss_fn(labels, predictions)
-        grads = tape.gradient(loss_value, self.model.trainable_variables)
+        grads, loss_value = self._tf_fit(inputs=inputs, labels=labels, model=self.model)
 
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
