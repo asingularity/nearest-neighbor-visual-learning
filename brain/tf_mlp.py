@@ -32,15 +32,26 @@ class TFRegressor(object):
         self.aux_model = tf.keras.Model(inputs=self.model.inputs,
                                         outputs=self.model.outputs + [self.model.layers[1].output])
 
-        loss_fn = tf.keras.losses.MeanSquaredError(reduction="auto", name="mean_squared_error")
+        self.loss_fn = tf.keras.losses.MeanSquaredError(reduction="auto", name="mean_squared_error")
 
         self.model.compile(optimizer='adam',
-                           loss=loss_fn,
+                           loss=self.loss_fn,
                            metrics=['accuracy'])
+
+        self.optimizer = tf.keras.optimizers.Adam()
 
         # intermediate values
         # https://stackoverflow.com/questions/59504884/how-tensorflow2-gets-intermediate-layer-output
         # https://stackoverflow.com/questions/63297838/how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
+
+
+    def fit_one_step(self, inputs, labels):
+        with tf.GradientTape() as tape:
+            predictions = self.model(inputs, training=True)
+            loss_value = self.loss_fn(labels, predictions)
+        grads = tape.gradient(loss_value, self.model.trainable_variables)
+
+        self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
 
     def fit(self, X, y):

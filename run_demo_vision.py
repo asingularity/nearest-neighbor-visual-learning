@@ -20,7 +20,8 @@ random.seed(6)
 np.random.seed(6)
 
 from utils.sim_folder_manager import SimFolderManager
-from brain.event_predict_brain import EventPredictBrain
+#from brain.event_predict_brain import EventPredictBrain
+from brain.continuous_event_brain import ContinuousEventBrain as EventPredictBrain
 from visualizers.basic_visualizer import BasicVisualizer
 from sensors.video_playback import VideoPlaybackSensor
 from preprocessors.event_pre_processor import EventPreProcessor
@@ -82,7 +83,7 @@ def get_brain_params(main_params):
         'lr': 1.0 / 100,  # 1000
         'max_time': main_params['MAX_TIME'],
         'do_plots_every_k_sec': 10,  # 5 or None
-        'use_context': False,
+        'use_context': True,
         'hidden_state_factor': 2,
         'num_training_points_per_batch': 200000,
         'retrain_every_k_steps':  100000  # None: train only once
