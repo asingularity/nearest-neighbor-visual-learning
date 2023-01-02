@@ -82,11 +82,11 @@ def get_brain_params(main_params):
         'input_im_dim': main_params['RF_IM_DIM'],
         'lr': 1.0 / 100,  # 1000
         'max_time': main_params['MAX_TIME'],
-        'do_plots_every_k_sec': 10,  # 5 or None
-        'use_context': True,
-        'hidden_state_factor': 2,
-        'num_training_points_per_batch': 200000,
-        'retrain_every_k_steps':  100000  # None: train only once
+        'do_plots_every_k_sec': 30,  # 5 or None
+        'use_context': False,  # True
+        'hidden_state_factor': 0.5,  # 2
+        'num_training_points_per_batch': None,  # not used for continuousu. 200000,
+        'retrain_every_k_steps': None,   # Not used for continuous. None: train only once. 100000
     }
 
     return brain_params

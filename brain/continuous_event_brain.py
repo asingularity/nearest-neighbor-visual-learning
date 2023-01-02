@@ -271,9 +271,9 @@ class ContinuousEventBrain(object):
 
         print()
         print('doing plots')
-        print('actual_times', actual_times)
-        print('predicted_times', predicted_times)
-        print('debug_vals', debug_vals)
+        #print('actual_times', actual_times)
+        #print('predicted_times', predicted_times)
+        #print('debug_vals', debug_vals)
         print()
 
         # THIS IS RF RASTER OLD?
