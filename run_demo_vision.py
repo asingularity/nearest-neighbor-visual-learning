@@ -189,7 +189,7 @@ def demo():
     main_params = {
         'MAX_TIME': 5000000,
         'DISABLE_BRAIN': False,
-        'RF_IM_DIM': 16,
+        'RF_IM_DIM': 8,
         'ROOT_DIR': '/home/csaba',
         'SIM_PREFIX': sim_prefix,
         'DISABLE_VIZ': False

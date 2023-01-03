@@ -263,7 +263,7 @@ class ContinuousEventBrain(object):
                                                np.arange(num_rf)[:, np.newaxis]))
         t = np.arange(raster_plot.shape[0])
         self.ax_bar_horiz.plot(t, raster_plot, color='b', marker='.', linestyle='')
-        self.fig_bar_horiz.savefig(self.plots_folder + "/raster_input.png", dpi=100)
+        self.fig_bar_horiz.savefig(self.plots_folder + "/raster_input_" + str(self.plot_num) + ".png", dpi=100)
 
         self.ax_bar_horiz.cla()
         num_rf = self.interm_events_raster_history.shape[0]

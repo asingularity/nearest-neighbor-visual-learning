@@ -38,7 +38,7 @@ class TFRegressor(object):
         self.final_output, self.intermediate_output = self.aux_model(self.inputs)
 
         self.loss = tf.reduce_mean(tf.square(self.labels - self.final_output))  # mean square error loss
-        self.optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=0.00001)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=0.00001 * 0.1)
         self.train_op = self.optimizer.minimize(self.loss)
 
         # Build the computation graph for prediction
