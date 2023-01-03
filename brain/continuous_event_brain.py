@@ -8,7 +8,7 @@ warnings.filterwarnings("error", category=UserWarning, message='Warning: convert
 import time
 import cv2
 # from sklearn.neural_network import MLPRegressor
-from brain.tf_mlp import TFRegressor as MLPRegressor
+from brain.tf_1_mlp import TFRegressor as MLPRegressor
 from preprocessors.event_pre_processor import SimpleEventPreProcessor
 
 import numpy as np

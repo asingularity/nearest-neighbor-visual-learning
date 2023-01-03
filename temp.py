@@ -1,6 +1,44 @@
 
 
 
+
+import tensorflow as tf
+
+# Disable eager execution
+tf.compat.v1.disable_eager_execution()
+
+# Build the model
+input_layer_size = 784
+hidden_layer_sizes = [32]
+output_layer_size = 10
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Flatten(input_shape=[input_layer_size]),
+  tf.keras.layers.Dense(hidden_layer_sizes[0], activation='relu'),
+  tf.keras.layers.Dense(output_layer_size)
+])
+
+aux_model = tf.keras.Model(inputs=model.inputs, outputs=model.outputs + [model.layers[1].output])
+
+# Build the computation graph
+inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, input_layer_size])
+labels = tf.compat.v1.placeholder(tf.float32, shape=[None, output_layer_size])
+
+# Get the final output and intermediate output
+final_output, intermediate_output = aux_model(inputs)
+
+loss = tf.reduce_mean(tf.square(labels - final_output))  # mean square error loss
+optimizer = tf.compat.v1.train.AdamOptimizer()
+train_op = optimizer.minimize(loss)
+
+# Run the computation graph in a session
+with tf.compat.v1.Session() as sess:
+  sess.run(tf.compat.v1.global_variables_initializer())
+  while True:
+    # Continuously get a new sample and train on it
+    sample_input, sample_label = ...
+    final_output_val, intermediate_output_val, _ = sess.run([final_output, intermediate_output, train_op], feed_dict={inputs: sample_input, labels: sample_label})
+
+
 '''
 
 copy vision stuff, just what is needed, from NL repo
