@@ -238,6 +238,7 @@ class ContinuousEventBrain(object):
         #    self.ax_bar_horiz.axhline(y=k, color='g')
 
         self.ax_bar_horiz.plot(self.mean_prediction_error[0:self.error_t + 1], color='r')
+        self.ax_bar_horiz.set_ylim([-1, 5])
 
         # self.fig_bar_horiz.savefig(self.plots_folder + "/predict_error_" + str(self.plot_num) + ".png", dpi=100)
         self.fig_bar_horiz.savefig(self.plots_folder + "/predict_error" + ".png", dpi=100)
@@ -267,7 +268,7 @@ class ContinuousEventBrain(object):
                                                np.arange(num_rf)[:, np.newaxis]))
         t = np.arange(raster_plot.shape[0])
         self.ax_bar_horiz.plot(t, raster_plot, color='b', marker='.', linestyle='')
-        self.fig_bar_horiz.savefig(self.plots_folder + "/raster_interm.png", dpi=100)
+        self.fig_bar_horiz.savefig(self.plots_folder + "/raster_interm_" + str(self.plot_num) + ".png", dpi=100)
 
         print()
         print('doing plots')
