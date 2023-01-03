@@ -240,6 +240,9 @@ class ContinuousEventBrain(object):
         self.ax_bar_horiz.plot(self.mean_prediction_error[0:self.error_t + 1], color='r')
         self.ax_bar_horiz.set_ylim([-1, 5])
 
+        for k in range(0, 5):
+            self.ax_bar_horiz.axhline(y=k, color='g')
+
         # self.fig_bar_horiz.savefig(self.plots_folder + "/predict_error_" + str(self.plot_num) + ".png", dpi=100)
         self.fig_bar_horiz.savefig(self.plots_folder + "/predict_error" + ".png", dpi=100)
 
