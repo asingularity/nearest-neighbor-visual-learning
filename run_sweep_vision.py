@@ -72,22 +72,15 @@ def post_process_results(sweep_results, sweep_folder, param_set):
 
 
 
-def run_one_sweep(param_set, sweeps_prefix):
-    # does NOT run in parallel for now; assumes single GPU is used for each parameter value
-
-    root_dir = '/home/csaba'
-
-    main_params = {
-        'MAX_TIME': 50000,  # 5000000
-        'DISABLE_BRAIN': False,
-        'RF_IM_DIM': 8,
-        'ROOT_DIR': root_dir,
-        'SIM_PREFIX': 'None',  # will be overwritten
-        'DISABLE_VIZ': True
-    }
+def run_one_sweep(main_params, param_set_sweep, param_set_other, sweep_prefix):
 
     sweep_results = []
-    sweep_folder = os.path.join(root_dir, 'projects/NL-sim-sweeps', sweeps_prefix)
+    sweep_folder = os.path.join(main_params['root_dir'], 'projects/NL-sim-sweeps', sweeps_prefix)
+
+    # TODO use pool map
+    #       with Pool(processes=18) as pool:
+    #         return_things = pool.map(run_one_sim, all_sim_params_list)
+    # TODO have option for GPU use or not
 
     for k in range(len(param_set[2])):
         print()
@@ -115,17 +108,35 @@ def run_one_sweep(param_set, sweeps_prefix):
 
 
 def main():
+
+    # TODO param sets: should be able to override/specify multiple params at once
+
     print()
-    sweeps_prefix = input('sweep sets prefix? >> ')
+    sweep_prefix = input('sweep prefix? >> ')
     print()
 
     now = datetime.datetime.now().isoformat()
 
-    sweeps_prefix = sweeps_prefix + '_' + now
+    sweeps_prefix = sweep_prefix + '_' + now
 
-    # run a sweep
-    param_set = ['robot_brain', 'use_context', [True, False]]
-    run_one_sweep(param_set=param_set, sweeps_prefix=sweeps_prefix)
+    main_params = {
+        'MAX_TIME': 1000000,  # 5000000
+        'DISABLE_BRAIN': False,
+        'RF_IM_DIM': 8,
+        'ROOT_DIR': '/home/csaba',
+        'SIM_PREFIX': 'None',  # will be overwritten
+        'DISABLE_VIZ': True
+    }
+
+    # parameter to sweep
+    #param_override_sweep = ('robot_brain', 'use_context', [True, False])
+    param_override_sweep = ('robot_brain', 'hidden_state_factor', [0.1, 0.5, 1, 5])
+
+    # other parameters we want to set here
+    params_override_other = [('robot_brain', 'use_context', True),
+                             ('robot_brain', 'do_plots_every_k_sec', 30)]
+
+    run_one_sweep(main_params=main_params, param_set_sweep=param_set, param_set_other=params_override_other, sweep_prefix=sweep_prefix)
 
     # hidden_state_factor: size of hidden layer dim relative to input state dim
     #param_set = ['robot_brain', 'hidden_state_factor', [0.1, 0.5, 1, 5]]
